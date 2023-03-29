@@ -1233,6 +1233,14 @@ int input_read_parameters(
 	flag2=_TRUE_;
 	pba->parameters_2_size_smg = 5;
 	class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
+
+                    /* Assuming alpha_T = alpha_M = 0, set alpha_K to
+                     * expression that yields cs2 = 1 at z = 1 */
+                pba->parameters_2_smg[0] = pba->parameters_2_smg[1]
+                    * pba->Omega0_smg * pba->Omega0_smg
+                    * (1 - 2* pba->parameters_2_smg[1] +
+                        (19 + 2 * pba->parameters_2_smg[1]) * (1 - pba->Omega0_smg))
+                    / (1 + 7 * (1 - pba->Omega0_smg));
       }
 
       if (strcmp(string1,"propto_scale") == 0) {

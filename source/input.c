@@ -1227,22 +1227,33 @@ int input_read_parameters(
       flag2=_FALSE_;
 
       if (strcmp(string1,"propto_omega") == 0) {
-	pba->gravity_model_smg = propto_omega;
-	pba->field_evolution_smg = _FALSE_;
-	pba->M_pl_evolution_smg = _TRUE_;
-	flag2=_TRUE_;
-	pba->parameters_2_size_smg = 5;
-	class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
+        pba->gravity_model_smg = propto_omega;
+        pba->field_evolution_smg = _FALSE_;
+        pba->M_pl_evolution_smg = _TRUE_;
+        flag2=_TRUE_;
+        pba->parameters_2_size_smg = 5;
+        class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
 
-                double alpha_B0 = 0;
-                class_read_double("alpha_B0", alpha_B0);
-                /* Changing to hi_class conventions */
-                pba->parameters_2_smg[1] = -2 * alpha_B0 / pba->Omega0_smg;
-                /* Assuming alpha_T = alpha_M = 0, set alpha_K to expression
+        flag3 = _FALSE_;
+        param3 = 0;
+        class_call(parser_read_double(pfc,"alpha_B0",&param3,&flag3,errmsg),
+                   errmsg,
+                   errmsg);
+
+        if (!flag3) {
+          class_call(parser_read_double(pfc,"log_alpha_B0",&param3,&flag3,errmsg),
+                     errmsg,
+                     errmsg);
+          param3 = - pow(10, param3);
+        }
+
+        /* Changing to hi_class conventions */
+        pba->parameters_2_smg[1] = -2 * param3 / pba->Omega0_smg;
+        /* Assuming alpha_T = alpha_M = 0, set alpha_K to expression
                  * that yields cs2 = 1 at z = 1 */
-                pba->parameters_2_smg[0] = 1 / pba->Omega0_smg
-                    * (-2) * (alpha_B0 + 4 * alpha_B0*alpha_B0 + 19 * alpha_B0 * (1 - pba->Omega0_smg))
-                    / (8 - 7 * pba->Omega0_smg);
+        pba->parameters_2_smg[0] = 1 / pba->Omega0_smg
+          * (-2) * (param3 + 4 * param3*param3 + 19 * param3 * (1 - pba->Omega0_smg))
+          / (8 - 7 * pba->Omega0_smg);
       }
 
       if (strcmp(string1,"propto_scale") == 0) {

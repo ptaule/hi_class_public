@@ -1234,6 +1234,7 @@ int input_read_parameters(
         pba->parameters_2_size_smg = 5;
         class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
 
+        /* alpha_B0 */
         flag3 = _FALSE_;
         param3 = 0;
         class_call(parser_read_double(pfc,"alpha_B0",&param3,&flag3,errmsg),
@@ -1247,13 +1248,38 @@ int input_read_parameters(
           param3 = - pow(10, param3);
         }
 
-        /* Changing to hi_class conventions */
-        pba->parameters_2_smg[1] = -2 * param3 / pba->Omega0_smg;
-        /* Assuming alpha_T = alpha_M = 0, set alpha_K to expression
-                 * that yields cs2 = 1 at z = 1 */
-        pba->parameters_2_smg[0] = 1 / pba->Omega0_smg
-          * (-2) * (param3 + 4 * param3*param3 + 19 * param3 * (1 - pba->Omega0_smg))
-          / (8 - 7 * pba->Omega0_smg);
+        if(flag3) {
+            /* Changing to hi_class conventions */
+            pba->parameters_2_smg[1] = -2 * param3 / pba->Omega0_smg;
+            /* Assuming alpha_T = alpha_M = 0, set alpha_K to expression
+                     * that yields cs2 = 1 at z = 1 */
+            pba->parameters_2_smg[0] = 1 / pba->Omega0_smg
+              * (-2) * (param3 + 4 * param3*param3 + 19 * param3 * (1 - pba->Omega0_smg))
+              / (8 - 7 * pba->Omega0_smg);
+        }
+
+        /* alpha_T0 */
+        flag3 = _FALSE_;
+        param3 = 0;
+        class_call(parser_read_double(pfc,"alpha_T0",&param3,&flag3,errmsg),
+                   errmsg,
+                   errmsg);
+
+        if (!flag3) {
+          class_call(parser_read_double(pfc,"log_alpha_T0",&param3,&flag3,errmsg),
+                     errmsg,
+                     errmsg);
+          param3 = - pow(10, param3);
+        }
+
+        if(flag3) {
+            /* Changing to hi_class conventions */
+            pba->parameters_2_smg[3] = param3 / pba->Omega0_smg;
+
+            /* Assuming alpha_B = alpha_M = 0, set alpha_K to expression
+                     * that yields cs2 = 1 at z = 1 */
+            pba->parameters_2_smg[0] = - 2 * pba->parameters_2_smg[3];
+        }
       }
 
       if (strcmp(string1,"propto_scale") == 0) {

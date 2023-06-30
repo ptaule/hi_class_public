@@ -1234,70 +1234,173 @@ int input_read_parameters(
         pba->parameters_2_size_smg = 5;
         class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
 
-        /* alpha_B0 */
+        /* alpha_B0 and alpha_T0.
+         * flag2 is used for identifying model, therefore we use flag1 and
+         * flag3 for alpha_B0 and alpha_T0 respectively */
+        flag1 = _FALSE_;
         flag3 = _FALSE_;
+        param1 = 0;
         param3 = 0;
-        class_call(parser_read_double(pfc,"alpha_B0",&param3,&flag3,errmsg),
+
+        class_call(parser_read_double(pfc,"alpha_B0",&param1,&flag1,errmsg),
                    errmsg,
                    errmsg);
-
-        if (!flag3) {
-          class_call(parser_read_double(pfc,"log_alpha_B0",&param3,&flag3,errmsg),
+        /* If alpha_B0 not given, look for log_alpha_B0. If both given, choose alpha_B0 */
+        if (!flag1) {
+          class_call(parser_read_double(pfc,"log_alpha_B0",&param1,&flag1,errmsg),
                      errmsg,
                      errmsg);
-          param3 = - pow(10, param3);
+          if (flag1) {
+            param1 = - pow(10, param1);
+          }
         }
-
-        if(flag3) {
-            /* Changing to hi_class conventions */
-            pba->parameters_2_smg[1] = -2 * param3 / pba->Omega0_smg;
-            /* Assuming alpha_T = alpha_M = 0, set alpha_K to expression
-                     * that yields cs2 = 1 at z = 1 */
-            pba->parameters_2_smg[0] = 1 / pba->Omega0_smg
-              * (-2) * (param3 + 4 * param3*param3 + 19 * param3 * (1 - pba->Omega0_smg))
-              / (8 - 7 * pba->Omega0_smg);
-        }
-
-        /* alpha_T0 */
-        flag3 = _FALSE_;
-        param3 = 0;
         class_call(parser_read_double(pfc,"alpha_T0",&param3,&flag3,errmsg),
                    errmsg,
                    errmsg);
-
         if (!flag3) {
           class_call(parser_read_double(pfc,"log_alpha_T0",&param3,&flag3,errmsg),
                      errmsg,
                      errmsg);
-          param3 = - pow(10, param3);
+            if (flag3) {
+              param3 = - pow(10, param3);
+          }
         }
 
-        if(flag3) {
-            /* Changing to hi_class conventions */
+        if (flag1) {
+            pba->parameters_2_smg[1] = -2 * param1 / pba->Omega0_smg;
+        }
+        if (flag3) {
             pba->parameters_2_smg[3] = param3 / pba->Omega0_smg;
+        }
 
-            /* Assuming alpha_B = alpha_M = 0, set alpha_K to expression
-                     * that yields cs2 = 1 at z = 1 */
-            pba->parameters_2_smg[0] = - 2 * pba->parameters_2_smg[3];
+        if(flag1 || flag3) {
+            /* Changing to hi_class conventions */
+            /* Assuming alpha_M = 0, set alpha_K to expression that yields
+             * cs2 = 1 at z = 1 */
+            pba->parameters_2_smg[0] = - 2 *
+              (64 * param3 + 16 * param1 * (10 + param3) + param1 * param1 * (32 + param3) -
+              2 * (14 * param1 * param1 + 56 * param3 + param1 * (146 + 7 * param3)) * pba->Omega0_smg +
+              7 * (19 * param1 + 7 * param3) * pba->Omega0_smg * pba->Omega0_smg
+              ) / (8 - 7 * pba->Omega0_smg) / (8 - 7 * pba->Omega0_smg);
         }
       }
 
       if (strcmp(string1,"propto_scale") == 0) {
-	pba->gravity_model_smg = propto_scale;
-	pba->field_evolution_smg = _FALSE_;
-	pba->M_pl_evolution_smg = _TRUE_;
-	flag2=_TRUE_;
-	pba->parameters_2_size_smg = 5;
-	class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
+        pba->gravity_model_smg = propto_scale;
+        pba->field_evolution_smg = _FALSE_;
+        pba->M_pl_evolution_smg = _TRUE_;
+        flag2=_TRUE_;
+        pba->parameters_2_size_smg = 5;
+        class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
+
+        /* alpha_B0 and alpha_T0.
+         * flag2 is used for identifying model, therefore we use flag1 and
+         * flag3 for alpha_B0 and alpha_T0 respectively */
+        flag1 = _FALSE_;
+        flag3 = _FALSE_;
+        param1 = 0;
+        param3 = 0;
+
+        class_call(parser_read_double(pfc,"alpha_B0",&param1,&flag1,errmsg),
+                   errmsg,
+                   errmsg);
+        /* If alpha_B0 not given, look for log_alpha_B0. If both given, choose alpha_B0 */
+        if (!flag1) {
+          class_call(parser_read_double(pfc,"log_alpha_B0",&param1,&flag1,errmsg),
+                     errmsg,
+                     errmsg);
+          if (flag1) {
+            param1 = - pow(10, param1);
+          }
+        }
+        class_call(parser_read_double(pfc,"alpha_T0",&param3,&flag3,errmsg),
+                   errmsg,
+                   errmsg);
+        if (!flag3) {
+          class_call(parser_read_double(pfc,"log_alpha_T0",&param3,&flag3,errmsg),
+                     errmsg,
+                     errmsg);
+          if (flag3) {
+            param3 = - pow(10, param3);
+          }
+        }
+
+        if (flag1) {
+          pba->parameters_2_smg[1] = -2 * param1 / pba->Omega0_smg;
+        }
+        if (flag3) {
+          pba->parameters_2_smg[3] = param3 / pba->Omega0_smg;
+        }
+
+        if(flag1 || flag3) {
+          /* Changing to hi_class conventions */
+          /* Assuming alpha_M = 0, set alpha_K to expression that yields
+             * cs2 = 1 at z = 1 */
+
+          pba->parameters_2_smg[0] = - (8 *
+            (4 * param3 + param1 * param1 * (8 + param3) + param1 * (2 + 4 * param3)) -
+            (28 * param3 + 7 * param1 * param1 * (8 + param3) + 4 * param1 * (2 + 7 * param3))
+            * pba->Omega0_smg ) / (16 - 14 * pba->Omega0_smg);
+        }
       }
 
       if (strcmp(string1,"constant_alphas") == 0) {
-	pba->gravity_model_smg = constant_alphas;
-	pba->field_evolution_smg = _FALSE_;
-	pba->M_pl_evolution_smg = _TRUE_;
-	flag2=_TRUE_;
-	pba->parameters_2_size_smg = 5;
-	class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
+        pba->gravity_model_smg = constant_alphas;
+        pba->field_evolution_smg = _FALSE_;
+        pba->M_pl_evolution_smg = _TRUE_;
+        flag2=_TRUE_;
+        pba->parameters_2_size_smg = 5;
+        class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
+
+        /* alpha_B0 and alpha_T0.
+         * flag2 is used for identifying model, therefore we use flag1 and
+         * flag3 for alpha_B0 and alpha_T0 respectively */
+        flag1 = _FALSE_;
+        flag3 = _FALSE_;
+        param1 = 0;
+        param3 = 0;
+
+        class_call(parser_read_double(pfc,"alpha_B0",&param1,&flag1,errmsg),
+                   errmsg,
+                   errmsg);
+        /* If alpha_B0 not given, look for log_alpha_B0. If both given, choose alpha_B0 */
+        if (!flag1) {
+          class_call(parser_read_double(pfc,"log_alpha_B0",&param1,&flag1,errmsg),
+                     errmsg,
+                     errmsg);
+          if (flag1) {
+            param1 = - pow(10, param1);
+          }
+        }
+        class_call(parser_read_double(pfc,"alpha_T0",&param3,&flag3,errmsg),
+                   errmsg,
+                   errmsg);
+        if (!flag3) {
+          class_call(parser_read_double(pfc,"log_alpha_T0",&param3,&flag3,errmsg),
+                     errmsg,
+                     errmsg);
+          if (flag3) {
+            param3 = - pow(10, param3);
+          }
+        }
+
+        if (flag1) {
+          pba->parameters_2_smg[1] = -2 * param1 / pba->Omega0_smg;
+        }
+        if (flag3) {
+          pba->parameters_2_smg[3] = param3 / pba->Omega0_smg;
+        }
+
+        if(flag1 || flag3) {
+          /* Changing to hi_class conventions */
+          /* Assuming alpha_M = 0, set alpha_K to expression that yields
+             * cs2 = 1 at z = 1 */
+          pba->parameters_2_smg[0] =
+            (8 * (2 * param3 + 2 * param1* param1 * (4 + param3) + param1 * (-1 + 4 * param3))
+            - 2 * (7 * param3 + 7 * param1 * param1 * (4 + param3) + param1 * (-5 + 14 * param3))
+            * pba->Omega0_smg) / (- 8 + 7 * pba->Omega0_smg);
+          printf("alpha_K0 = %f\n", pba->parameters_2_smg[0]);
+        }
       }
 
       if (strcmp(string1,"eft_alphas_power_law") == 0) {

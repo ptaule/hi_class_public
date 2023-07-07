@@ -520,8 +520,8 @@ int input_read_parameters(
 
   /** - define local variables */
 
-  int flag1,flag2,flag3,flag4;
-  double param1,param2,param3,param4;
+  int flag1,flag2,flag3,flag4,flag5;
+  double param1,param2,param3,param4,param5;
   int N_ncdm=0,n,entries_read;
   int int1,fileentries;
   double scf_lambda;
@@ -1239,8 +1239,12 @@ int input_read_parameters(
          * flag3 for alpha_B0 and alpha_T0 respectively */
         flag1 = _FALSE_;
         flag3 = _FALSE_;
+        flag4 = _FALSE_;
+        flag5 = _FALSE_;
         param1 = 0;
         param3 = 0;
+        param4 = 0;
+        param5 = 0;
 
         class_call(parser_read_double(pfc,"alpha_B0",&param1,&flag1,errmsg),
                    errmsg,
@@ -1266,6 +1270,7 @@ int input_read_parameters(
           }
         }
 
+        /* Changing to hi_class conventions */
         if (flag1) {
             pba->parameters_2_smg[1] = -2 * param1 / pba->Omega0_smg;
         }
@@ -1273,15 +1278,41 @@ int input_read_parameters(
             pba->parameters_2_smg[3] = param3 / pba->Omega0_smg;
         }
 
-        if(flag1 || flag3) {
-            /* Changing to hi_class conventions */
-            /* Assuming alpha_M = 0, set alpha_K to expression that yields
-             * cs2 = 1 at z = 1 */
+        /* use flag4, flag5, param4 and param5 for w0wa */
+        class_call(parser_read_double(pfc,"eftofde_w0",&param4,&flag4,errmsg),
+                   errmsg,
+                   errmsg);
+        class_call(parser_read_double(pfc,"eftofde_wa",&param5,&flag5,errmsg),
+                   errmsg,
+                   errmsg);
+
+        /* Assuming alpha_M = 0, set alpha_K to expression that yields
+         * cs2 = 1 at z = 1 */
+        if (flag1 || flag3) {
+          if (flag4 || flag5) {
+            /* w0wa is on */
+            pba->parameters_2_smg[0] =
+            (0.5*(-4.*param3 - 1.*pow(2.,2. + 3.*param4 + 1.5*param5)*pow(param1,2)*(4. + pow(2.,1.5*(2.*param4 + param5))*param3) +
+              3.*pow(-1. + pow(2.,1.5*(2.*param4 + param5)),2)*pow(pba->Omega0_smg,3)*(2. + 2.*param4 + param5) +
+              param1*(2. - 1.*pow(2.,3. + 3.*param4 + 1.5*param5)*param3 + 12.*param4 + 10.158883083359672*param5) +
+              pba->Omega0_smg*(6. + (pow(2.,4. + 3.*param4 + 1.5*param5) - 1.*pow(2.,4. + 6.*param4 + 3.*param5))*pow(param1,2) + 8.*param3 -
+              1.*pow(2.,3. + 3.*param4 + 1.5*param5)*param3 + 6.*param4 + 3.*param5 +
+              param1*(-4. + pow(2.,2. + 3.*param4 + 1.5*param5) + (pow(2.,3. + 3.*param4 + 1.5*param5) - 1.*pow(8.,1. + 2.*param4 + param5))*param3 +
+              6.*(-4. + 3.*pow(2.,1.5*(2.*param4 + param5)))*param4 - 20.317766166719345*param5 + 9.*pow(2.,1.5*(2.*param4 + param5))*param5 +
+              2.0794415416798357*pow(2.,1. + 3.*param4 + 1.5*param5)*param5)) +
+              pow(pba->Omega0_smg,2)*(param1*(2.*pow(-1. + pow(2.,1.5*(2.*param4 + param5)),2) +
+              6.*(2. - 3.*pow(2.,1.5*(2.*param4 + param5)) + pow(2.,3.*(2.*param4 + param5)))*param4 +
+              (10.158883083359672 - 9.*pow(2.,1.5*(2.*param4 + param5)) - 2.0794415416798357*pow(2.,1. + 3.*param4 + 1.5*param5) + 3.*pow(8.,2.*param4 + param5))*
+              param5) - 2.*(-1. + pow(2.,1.5*(2.*param4 + param5)))*(2.*(-1. + pow(2.,1.5*(2.*param4 + param5)))*param3 - 3.*(2. + 2.*param4 + param5)))))
+              / pow(1. + (-1. + pow(2.,1.5*(2.*param4 + param5)))*pba->Omega0_smg,2);
+          }
+          else {
             pba->parameters_2_smg[0] = - 2 *
               (64 * param3 + 16 * param1 * (10 + param3) + param1 * param1 * (32 + param3) -
-              2 * (14 * param1 * param1 + 56 * param3 + param1 * (146 + 7 * param3)) * pba->Omega0_smg +
-              7 * (19 * param1 + 7 * param3) * pba->Omega0_smg * pba->Omega0_smg
-              ) / (8 - 7 * pba->Omega0_smg) / (8 - 7 * pba->Omega0_smg);
+               2 * (14 * param1 * param1 + 56 * param3 + param1 * (146 + 7 * param3)) * pba->Omega0_smg +
+               7 * (19 * param1 + 7 * param3) * pba->Omega0_smg * pba->Omega0_smg
+               ) / (8 - 7 * pba->Omega0_smg) / (8 - 7 * pba->Omega0_smg);
+          }
         }
       }
 
@@ -1298,8 +1329,12 @@ int input_read_parameters(
          * flag3 for alpha_B0 and alpha_T0 respectively */
         flag1 = _FALSE_;
         flag3 = _FALSE_;
+        flag4 = _FALSE_;
+        flag5 = _FALSE_;
         param1 = 0;
         param3 = 0;
+        param4 = 0;
+        param5 = 0;
 
         class_call(parser_read_double(pfc,"alpha_B0",&param1,&flag1,errmsg),
                    errmsg,
@@ -1325,22 +1360,39 @@ int input_read_parameters(
           }
         }
 
+        /* Changing to hi_class conventions */
         if (flag1) {
-          pba->parameters_2_smg[1] = -2 * param1 / pba->Omega0_smg;
+          pba->parameters_2_smg[1] = -2 * param1;
         }
         if (flag3) {
-          pba->parameters_2_smg[3] = param3 / pba->Omega0_smg;
+          pba->parameters_2_smg[3] = param3;
         }
 
-        if(flag1 || flag3) {
-          /* Changing to hi_class conventions */
-          /* Assuming alpha_M = 0, set alpha_K to expression that yields
-             * cs2 = 1 at z = 1 */
+        /* use flag4, flag5, param4 and param5 for w0wa */
+        class_call(parser_read_double(pfc,"eftofde_w0",&param4,&flag4,errmsg),
+                   errmsg,
+                   errmsg);
+        class_call(parser_read_double(pfc,"eftofde_wa",&param5,&flag5,errmsg),
+                   errmsg,
+                   errmsg);
 
-          pba->parameters_2_smg[0] = - (8 *
-            (4 * param3 + param1 * param1 * (8 + param3) + param1 * (2 + 4 * param3)) -
-            (28 * param3 + 7 * param1 * param1 * (8 + param3) + 4 * param1 * (2 + 7 * param3))
-            * pba->Omega0_smg ) / (16 - 14 * pba->Omega0_smg);
+        /* Assuming alpha_M = 0, set alpha_K to expression that yields
+           * cs2 = 1 at z = 1 */
+        if(flag1 || flag3) {
+          if (flag4 || flag5) {
+            /* w0wa is on */
+            pba->parameters_2_smg[0] =
+              (pow(param1,2)*(-4. + pba->Omega0_smg*(4. + 0.5*param3) - 0.5*param3) + (-2. + 2.*pba->Omega0_smg)*param3 +
+              param1*(-1. - 2.*param3 + pba->Omega0_smg*(1. + 2.*param3)) + exp(2.0794415416798357*param4 + 1.0397207708399179*param5)*pba->Omega0_smg*
+              (6. + pow(param1,2)*(-4. - 0.5*param3) - 2.*param3 + 6.*param4 + 3.*param5 + param1*(-1. - 2.*param3 + 3.*param4 + 1.5*param5)))
+              / (1. - pba->Omega0_smg + exp(2.0794415416798357*param4 + 1.0397207708399179*param5)*pba->Omega0_smg);
+          }
+          else {
+            pba->parameters_2_smg[0] = - (8 *
+              (4 * param3 + param1 * param1 * (8 + param3) + param1 * (2 + 4 * param3)) -
+              (28 * param3 + 7 * param1 * param1 * (8 + param3) + 4 * param1 * (2 + 7 * param3))
+              * pba->Omega0_smg ) / (16 - 14 * pba->Omega0_smg);
+          }
         }
       }
 
@@ -1357,8 +1409,12 @@ int input_read_parameters(
          * flag3 for alpha_B0 and alpha_T0 respectively */
         flag1 = _FALSE_;
         flag3 = _FALSE_;
+        flag4 = _FALSE_;
+        flag5 = _FALSE_;
         param1 = 0;
         param3 = 0;
+        param4 = 0;
+        param5 = 0;
 
         class_call(parser_read_double(pfc,"alpha_B0",&param1,&flag1,errmsg),
                    errmsg,
@@ -1384,21 +1440,38 @@ int input_read_parameters(
           }
         }
 
+        /* Changing to hi_class conventions */
         if (flag1) {
-          pba->parameters_2_smg[1] = -2 * param1 / pba->Omega0_smg;
+          pba->parameters_2_smg[1] = -2 * param1;
         }
         if (flag3) {
-          pba->parameters_2_smg[3] = param3 / pba->Omega0_smg;
+          pba->parameters_2_smg[3] = param3;
         }
 
+        /* use flag4, flag5, param4 and param5 for w0wa */
+        class_call(parser_read_double(pfc,"eftofde_w0",&param4,&flag4,errmsg),
+                   errmsg,
+                   errmsg);
+        class_call(parser_read_double(pfc,"eftofde_wa",&param5,&flag5,errmsg),
+                   errmsg,
+                   errmsg);
+
+        /* Assuming alpha_M = 0, set alpha_K to expression that yields
+           * cs2 = 1 at z = 1 */
         if(flag1 || flag3) {
-          /* Changing to hi_class conventions */
-          /* Assuming alpha_M = 0, set alpha_K to expression that yields
-             * cs2 = 1 at z = 1 */
-          pba->parameters_2_smg[0] =
-            (8 * (2 * param3 + 2 * param1* param1 * (4 + param3) + param1 * (-1 + 4 * param3))
-            - 2 * (7 * param3 + 7 * param1 * param1 * (4 + param3) + param1 * (-5 + 14 * param3))
-            * pba->Omega0_smg) / (- 8 + 7 * pba->Omega0_smg);
+          if (flag4 || flag5) {
+            pba->parameters_2_smg[0] =
+              ((-2. + 2.*pba->Omega0_smg)*param3 + pow(param1,2)*(-8. - 2.*param3 + pba->Omega0_smg*(8. + 2.*param3)) +
+              param1*(1. - 4.*param3 + pba->Omega0_smg*(-1. + 4.*param3)) + exp(2.0794415416798357*param4 + 1.0397207708399179*param5)*pba->Omega0_smg*
+              (3. + pow(param1,2)*(-8. - 2.*param3) - 2.*param3 + 3.*param4 + 1.5*param5 + param1*(1. - 4.*param3 + 3.*param4 + 1.5*param5)))
+              / (1. - pba->Omega0_smg + exp(2.0794415416798357*param4 + 1.0397207708399179*param5)*pba->Omega0_smg);
+          }
+          else{
+            pba->parameters_2_smg[0] =
+              (8 * (2 * param3 + 2 * param1* param1 * (4 + param3) + param1 * (-1 + 4 * param3))
+              - 2 * (7 * param3 + 7 * param1 * param1 * (4 + param3) + param1 * (-5 + 14 * param3))
+              * pba->Omega0_smg) / (- 8 + 7 * pba->Omega0_smg);
+          }
         }
       }
 

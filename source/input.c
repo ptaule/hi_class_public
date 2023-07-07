@@ -1399,7 +1399,6 @@ int input_read_parameters(
             (8 * (2 * param3 + 2 * param1* param1 * (4 + param3) + param1 * (-1 + 4 * param3))
             - 2 * (7 * param3 + 7 * param1 * param1 * (4 + param3) + param1 * (-5 + 14 * param3))
             * pba->Omega0_smg) / (- 8 + 7 * pba->Omega0_smg);
-          printf("alpha_K0 = %f\n", pba->parameters_2_smg[0]);
         }
       }
 

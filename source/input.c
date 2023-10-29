@@ -520,8 +520,8 @@ int input_read_parameters(
 
   /** - define local variables */
 
-  int flag1,flag2,flag3,flag4,flag5;
-  double param1,param2,param3,param4,param5;
+  int flag1,flag2,flag3,flag4;
+  double param1,param2,param3,param4;
   int N_ncdm=0,n,entries_read;
   int int1,fileentries;
   double scf_lambda;
@@ -556,6 +556,11 @@ int input_read_parameters(
   double z_max=0.;
   int bin;
   int input_verbose=0;
+
+  double eftofde_alphaB0=0;
+  double eftofde_alphaT0=0;
+  double eftofde_w0 = 0;
+  double eftofde_wa = 0;
 
   sigma_B = 2. * pow(_PI_,5) * pow(_k_B_,4) / 15. / pow(_h_P_,3) / pow(_c_,2);
 
@@ -1221,6 +1226,47 @@ int input_read_parameters(
     if (has_dxdy_guess_smg == _FALSE_)
       pba->tuning_dxdy_guess_smg = 1;
 
+      /* For EFTofDE BOSS analysis, read and temporarily store w0/wa and
+      * alpha_B0, alpha_T0
+      * flag2 is used for identifying model, therefore we use flag1 and
+      * flag3 for alpha_B0 and alpha_T0 respectively.
+      * For w0wa, one needs to provide w0, this "turns on" w0wa, and then wa
+      * can be optionally given (default wa=0). w0wa is indicated immeadiately
+      * below by flag4 */
+
+      flag1 = _FALSE_;
+      flag3 = _FALSE_;
+      flag4 = _FALSE_;
+      class_call(parser_read_double(pfc,"alpha_B0",&eftofde_alphaB0,&flag1,errmsg),
+                 errmsg,
+                 errmsg);
+      /* If alpha_B0 not given, look for log_alpha_B0. If both given, choose alpha_B0 */
+      if (!flag1) {
+        class_call(parser_read_double(pfc,"log_alpha_B0",&eftofde_alphaB0,&flag1,errmsg),
+                   errmsg,
+                   errmsg);
+        if (flag1) {
+          eftofde_alphaB0 = - pow(10, eftofde_alphaB0);
+        }
+      }
+      class_call(parser_read_double(pfc,"eftofde_alpha_T0",&eftofde_alpha_T0,&flag3,errmsg),
+                 errmsg,
+                 errmsg);
+      if (!flag3) {
+        class_call(parser_read_double(pfc,"log_eftofde_alpha_T0",&eftofde_alpha_T0,&flag3,errmsg),
+                   errmsg,
+                   errmsg);
+        if (flag3) {
+          eftofde_alpha_T0 = - pow(10, eftofde_alpha_T0);
+        }
+      }
+      class_call(parser_read_double(pfc,"eftofde_wa",&eftofde_wa,&flag4,errmsg),
+                 errmsg,
+                 errmsg);
+      class_call(parser_read_double(pfc,"eftofde_w0",&eftofde_w0,&flag4,errmsg),
+                 errmsg,
+                 errmsg);
+
     /** Loop over the different models
      * flag2 keeps track of whether model has been identified
      */
@@ -1234,83 +1280,39 @@ int input_read_parameters(
         pba->parameters_2_size_smg = 5;
         class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
 
-        /* alpha_B0 and alpha_T0.
-         * flag2 is used for identifying model, therefore we use flag1 and
-         * flag3 for alpha_B0 and alpha_T0 respectively */
-        flag1 = _FALSE_;
-        flag3 = _FALSE_;
-        flag4 = _FALSE_;
-        flag5 = _FALSE_;
-        param1 = 0;
-        param3 = 0;
-        param4 = 0;
-        param5 = 0;
-
-        class_call(parser_read_double(pfc,"alpha_B0",&param1,&flag1,errmsg),
-                   errmsg,
-                   errmsg);
-        /* If alpha_B0 not given, look for log_alpha_B0. If both given, choose alpha_B0 */
-        if (!flag1) {
-          class_call(parser_read_double(pfc,"log_alpha_B0",&param1,&flag1,errmsg),
-                     errmsg,
-                     errmsg);
-          if (flag1) {
-            param1 = - pow(10, param1);
-          }
-        }
-        class_call(parser_read_double(pfc,"alpha_T0",&param3,&flag3,errmsg),
-                   errmsg,
-                   errmsg);
-        if (!flag3) {
-          class_call(parser_read_double(pfc,"log_alpha_T0",&param3,&flag3,errmsg),
-                     errmsg,
-                     errmsg);
-            if (flag3) {
-              param3 = - pow(10, param3);
-          }
-        }
-
         /* Changing to hi_class conventions */
         if (flag1) {
-            pba->parameters_2_smg[1] = -2 * param1 / pba->Omega0_smg;
+            pba->parameters_2_smg[1] = -2 * eftofde_alphaB0 / pba->Omega0_smg;
         }
         if (flag3) {
-            pba->parameters_2_smg[3] = param3 / pba->Omega0_smg;
+            pba->parameters_2_smg[3] = eftofde_alphaT0 / pba->Omega0_smg;
         }
-
-        /* use flag4, flag5, param4 and param5 for w0wa */
-        class_call(parser_read_double(pfc,"eftofde_w0",&param4,&flag4,errmsg),
-                   errmsg,
-                   errmsg);
-        class_call(parser_read_double(pfc,"eftofde_wa",&param5,&flag5,errmsg),
-                   errmsg,
-                   errmsg);
 
         /* Assuming alpha_M = 0, set alpha_K to expression that yields
          * cs2 = 1 at z = 1 */
         if (flag1 || flag3) {
-          if (flag4 || flag5) {
+          if (flag4) {
             /* w0wa is on */
             pba->parameters_2_smg[0] =
-            (0.5*(-4.*param3 - 1.*pow(2.,2. + 3.*param4 + 1.5*param5)*pow(param1,2)*(4. + pow(2.,1.5*(2.*param4 + param5))*param3) +
-              3.*pow(-1. + pow(2.,1.5*(2.*param4 + param5)),2)*pow(pba->Omega0_smg,3)*(2. + 2.*param4 + param5) +
-              param1*(2. - 1.*pow(2.,3. + 3.*param4 + 1.5*param5)*param3 + 12.*param4 + 10.158883083359672*param5) +
-              pba->Omega0_smg*(6. + (pow(2.,4. + 3.*param4 + 1.5*param5) - 1.*pow(2.,4. + 6.*param4 + 3.*param5))*pow(param1,2) + 8.*param3 -
-              1.*pow(2.,3. + 3.*param4 + 1.5*param5)*param3 + 6.*param4 + 3.*param5 +
-              param1*(-4. + pow(2.,2. + 3.*param4 + 1.5*param5) + (pow(2.,3. + 3.*param4 + 1.5*param5) - 1.*pow(8.,1. + 2.*param4 + param5))*param3 +
-              6.*(-4. + 3.*pow(2.,1.5*(2.*param4 + param5)))*param4 - 20.317766166719345*param5 + 9.*pow(2.,1.5*(2.*param4 + param5))*param5 +
-              2.0794415416798357*pow(2.,1. + 3.*param4 + 1.5*param5)*param5)) +
-              pow(pba->Omega0_smg,2)*(param1*(2.*pow(-1. + pow(2.,1.5*(2.*param4 + param5)),2) +
-              6.*(2. - 3.*pow(2.,1.5*(2.*param4 + param5)) + pow(2.,3.*(2.*param4 + param5)))*param4 +
-              (10.158883083359672 - 9.*pow(2.,1.5*(2.*param4 + param5)) - 2.0794415416798357*pow(2.,1. + 3.*param4 + 1.5*param5) + 3.*pow(8.,2.*param4 + param5))*
-              param5) - 2.*(-1. + pow(2.,1.5*(2.*param4 + param5)))*(2.*(-1. + pow(2.,1.5*(2.*param4 + param5)))*param3 - 3.*(2. + 2.*param4 + param5)))))
-              / pow(1. + (-1. + pow(2.,1.5*(2.*param4 + param5)))*pba->Omega0_smg,2);
+            (0.5*(-4.*eftofde_alphaT0 - 1.*pow(2.,2. + 3.*eftofde_w0 + 1.5*eftofde_wa)*pow(eftofde_alphaB0,2)*(4. + pow(2.,1.5*(2.*eftofde_w0 + eftofde_wa))*eftofde_alphaT0) +
+              3.*pow(-1. + pow(2.,1.5*(2.*eftofde_w0 + eftofde_wa)),2)*pow(pba->Omega0_smg,3)*(2. + 2.*eftofde_w0 + eftofde_wa) +
+              eftofde_alphaB0*(2. - 1.*pow(2.,3. + 3.*eftofde_w0 + 1.5*eftofde_wa)*eftofde_alphaT0 + 12.*eftofde_w0 + 10.158883083359672*eftofde_wa) +
+              pba->Omega0_smg*(6. + (pow(2.,4. + 3.*eftofde_w0 + 1.5*eftofde_wa) - 1.*pow(2.,4. + 6.*eftofde_w0 + 3.*eftofde_wa))*pow(eftofde_alphaB0,2) + 8.*eftofde_alphaT0 -
+              1.*pow(2.,3. + 3.*eftofde_w0 + 1.5*eftofde_wa)*eftofde_alphaT0 + 6.*eftofde_w0 + 3.*eftofde_wa +
+              eftofde_alphaB0*(-4. + pow(2.,2. + 3.*eftofde_w0 + 1.5*eftofde_wa) + (pow(2.,3. + 3.*eftofde_w0 + 1.5*eftofde_wa) - 1.*pow(8.,1. + 2.*eftofde_w0 + eftofde_wa))*eftofde_alphaT0 +
+              6.*(-4. + 3.*pow(2.,1.5*(2.*eftofde_w0 + eftofde_wa)))*eftofde_w0 - 20.317766166719345*eftofde_wa + 9.*pow(2.,1.5*(2.*eftofde_w0 + eftofde_wa))*eftofde_wa +
+              2.0794415416798357*pow(2.,1. + 3.*eftofde_w0 + 1.5*eftofde_wa)*eftofde_wa)) +
+              pow(pba->Omega0_smg,2)*(eftofde_alphaB0*(2.*pow(-1. + pow(2.,1.5*(2.*eftofde_w0 + eftofde_wa)),2) +
+              6.*(2. - 3.*pow(2.,1.5*(2.*eftofde_w0 + eftofde_wa)) + pow(2.,3.*(2.*eftofde_w0 + eftofde_wa)))*eftofde_w0 +
+              (10.158883083359672 - 9.*pow(2.,1.5*(2.*eftofde_w0 + eftofde_wa)) - 2.0794415416798357*pow(2.,1. + 3.*eftofde_w0 + 1.5*eftofde_wa) + 3.*pow(8.,2.*eftofde_w0 + eftofde_wa))*
+              eftofde_wa) - 2.*(-1. + pow(2.,1.5*(2.*eftofde_w0 + eftofde_wa)))*(2.*(-1. + pow(2.,1.5*(2.*eftofde_w0 + eftofde_wa)))*eftofde_alphaT0 - 3.*(2. + 2.*eftofde_w0 + eftofde_wa)))))
+              / pow(1. + (-1. + pow(2.,1.5*(2.*eftofde_w0 + eftofde_wa)))*pba->Omega0_smg,2);
           }
           else {
             pba->parameters_2_smg[0] = - 2 *
-              (64 * param3 + 16 * param1 * (10 + param3) + param1 * param1 * (32 + param3) -
-               2 * (14 * param1 * param1 + 56 * param3 + param1 * (146 + 7 * param3)) * pba->Omega0_smg +
-               7 * (19 * param1 + 7 * param3) * pba->Omega0_smg * pba->Omega0_smg
+              (64 * eftofde_alphaT0 + 16 * eftofde_alphaB0 * (10 + eftofde_alphaT0) + eftofde_alphaB0 * eftofde_alphaB0 * (32 + eftofde_alphaT0) -
+               2 * (14 * eftofde_alphaB0 * eftofde_alphaB0 + 56 * eftofde_alphaT0 + eftofde_alphaB0 * (146 + 7 * eftofde_alphaT0)) * pba->Omega0_smg +
+               7 * (19 * eftofde_alphaB0 + 7 * eftofde_alphaT0) * pba->Omega0_smg * pba->Omega0_smg
                ) / (8 - 7 * pba->Omega0_smg) / (8 - 7 * pba->Omega0_smg);
           }
         }
@@ -1324,73 +1326,29 @@ int input_read_parameters(
         pba->parameters_2_size_smg = 5;
         class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
 
-        /* alpha_B0 and alpha_T0.
-         * flag2 is used for identifying model, therefore we use flag1 and
-         * flag3 for alpha_B0 and alpha_T0 respectively */
-        flag1 = _FALSE_;
-        flag3 = _FALSE_;
-        flag4 = _FALSE_;
-        flag5 = _FALSE_;
-        param1 = 0;
-        param3 = 0;
-        param4 = 0;
-        param5 = 0;
-
-        class_call(parser_read_double(pfc,"alpha_B0",&param1,&flag1,errmsg),
-                   errmsg,
-                   errmsg);
-        /* If alpha_B0 not given, look for log_alpha_B0. If both given, choose alpha_B0 */
-        if (!flag1) {
-          class_call(parser_read_double(pfc,"log_alpha_B0",&param1,&flag1,errmsg),
-                     errmsg,
-                     errmsg);
-          if (flag1) {
-            param1 = - pow(10, param1);
-          }
-        }
-        class_call(parser_read_double(pfc,"alpha_T0",&param3,&flag3,errmsg),
-                   errmsg,
-                   errmsg);
-        if (!flag3) {
-          class_call(parser_read_double(pfc,"log_alpha_T0",&param3,&flag3,errmsg),
-                     errmsg,
-                     errmsg);
-          if (flag3) {
-            param3 = - pow(10, param3);
-          }
-        }
-
         /* Changing to hi_class conventions */
         if (flag1) {
-          pba->parameters_2_smg[1] = -2 * param1;
+          pba->parameters_2_smg[1] = -2 * eftofde_alphaB0;
         }
         if (flag3) {
-          pba->parameters_2_smg[3] = param3;
+          pba->parameters_2_smg[3] = eftofde_alphaT0;
         }
-
-        /* use flag4, flag5, param4 and param5 for w0wa */
-        class_call(parser_read_double(pfc,"eftofde_w0",&param4,&flag4,errmsg),
-                   errmsg,
-                   errmsg);
-        class_call(parser_read_double(pfc,"eftofde_wa",&param5,&flag5,errmsg),
-                   errmsg,
-                   errmsg);
 
         /* Assuming alpha_M = 0, set alpha_K to expression that yields
            * cs2 = 1 at z = 1 */
         if(flag1 || flag3) {
-          if (flag4 || flag5) {
+          if (flag4) {
             /* w0wa is on */
             pba->parameters_2_smg[0] =
-              (pow(param1,2)*(-4. + pba->Omega0_smg*(4. + 0.5*param3) - 0.5*param3) + (-2. + 2.*pba->Omega0_smg)*param3 +
-              param1*(-1. - 2.*param3 + pba->Omega0_smg*(1. + 2.*param3)) + exp(2.0794415416798357*param4 + 1.0397207708399179*param5)*pba->Omega0_smg*
-              (6. + pow(param1,2)*(-4. - 0.5*param3) - 2.*param3 + 6.*param4 + 3.*param5 + param1*(-1. - 2.*param3 + 3.*param4 + 1.5*param5)))
-              / (1. - pba->Omega0_smg + exp(2.0794415416798357*param4 + 1.0397207708399179*param5)*pba->Omega0_smg);
+              (pow(eftofde_alphaB0,2)*(-4. + pba->Omega0_smg*(4. + 0.5*eftofde_alphaT0) - 0.5*eftofde_alphaT0) + (-2. + 2.*pba->Omega0_smg)*eftofde_alphaT0 +
+              eftofde_alphaB0*(-1. - 2.*eftofde_alphaT0 + pba->Omega0_smg*(1. + 2.*eftofde_alphaT0)) + exp(2.0794415416798357*eftofde_w0 + 1.0397207708399179*eftofde_wa)*pba->Omega0_smg*
+              (6. + pow(eftofde_alphaB0,2)*(-4. - 0.5*eftofde_alphaT0) - 2.*eftofde_alphaT0 + 6.*eftofde_w0 + 3.*eftofde_wa + eftofde_alphaB0*(-1. - 2.*eftofde_alphaT0 + 3.*eftofde_w0 + 1.5*eftofde_wa)))
+              / (1. - pba->Omega0_smg + exp(2.0794415416798357*eftofde_w0 + 1.0397207708399179*eftofde_wa)*pba->Omega0_smg);
           }
           else {
             pba->parameters_2_smg[0] = - (8 *
-              (4 * param3 + param1 * param1 * (8 + param3) + param1 * (2 + 4 * param3)) -
-              (28 * param3 + 7 * param1 * param1 * (8 + param3) + 4 * param1 * (2 + 7 * param3))
+              (4 * eftofde_alphaT0 + eftofde_alphaB0 * eftofde_alphaB0 * (8 + eftofde_alphaT0) + eftofde_alphaB0 * (2 + 4 * eftofde_alphaT0)) -
+              (28 * eftofde_alphaT0 + 7 * eftofde_alphaB0 * eftofde_alphaB0 * (8 + eftofde_alphaT0) + 4 * eftofde_alphaB0 * (2 + 7 * eftofde_alphaT0))
               * pba->Omega0_smg ) / (16 - 14 * pba->Omega0_smg);
           }
         }
@@ -1404,72 +1362,28 @@ int input_read_parameters(
         pba->parameters_2_size_smg = 5;
         class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
 
-        /* alpha_B0 and alpha_T0.
-         * flag2 is used for identifying model, therefore we use flag1 and
-         * flag3 for alpha_B0 and alpha_T0 respectively */
-        flag1 = _FALSE_;
-        flag3 = _FALSE_;
-        flag4 = _FALSE_;
-        flag5 = _FALSE_;
-        param1 = 0;
-        param3 = 0;
-        param4 = 0;
-        param5 = 0;
-
-        class_call(parser_read_double(pfc,"alpha_B0",&param1,&flag1,errmsg),
-                   errmsg,
-                   errmsg);
-        /* If alpha_B0 not given, look for log_alpha_B0. If both given, choose alpha_B0 */
-        if (!flag1) {
-          class_call(parser_read_double(pfc,"log_alpha_B0",&param1,&flag1,errmsg),
-                     errmsg,
-                     errmsg);
-          if (flag1) {
-            param1 = - pow(10, param1);
-          }
-        }
-        class_call(parser_read_double(pfc,"alpha_T0",&param3,&flag3,errmsg),
-                   errmsg,
-                   errmsg);
-        if (!flag3) {
-          class_call(parser_read_double(pfc,"log_alpha_T0",&param3,&flag3,errmsg),
-                     errmsg,
-                     errmsg);
-          if (flag3) {
-            param3 = - pow(10, param3);
-          }
-        }
-
         /* Changing to hi_class conventions */
         if (flag1) {
-          pba->parameters_2_smg[1] = -2 * param1;
+          pba->parameters_2_smg[1] = -2 * eftofde_alphaB0;
         }
         if (flag3) {
-          pba->parameters_2_smg[3] = param3;
+          pba->parameters_2_smg[3] = eftofde_alphaT0;
         }
-
-        /* use flag4, flag5, param4 and param5 for w0wa */
-        class_call(parser_read_double(pfc,"eftofde_w0",&param4,&flag4,errmsg),
-                   errmsg,
-                   errmsg);
-        class_call(parser_read_double(pfc,"eftofde_wa",&param5,&flag5,errmsg),
-                   errmsg,
-                   errmsg);
 
         /* Assuming alpha_M = 0, set alpha_K to expression that yields
            * cs2 = 1 at z = 1 */
-        if(flag1 || flag3) {
+        if(flag1) {
           if (flag4 || flag5) {
             pba->parameters_2_smg[0] =
-              ((-2. + 2.*pba->Omega0_smg)*param3 + pow(param1,2)*(-8. - 2.*param3 + pba->Omega0_smg*(8. + 2.*param3)) +
-              param1*(1. - 4.*param3 + pba->Omega0_smg*(-1. + 4.*param3)) + exp(2.0794415416798357*param4 + 1.0397207708399179*param5)*pba->Omega0_smg*
-              (3. + pow(param1,2)*(-8. - 2.*param3) - 2.*param3 + 3.*param4 + 1.5*param5 + param1*(1. - 4.*param3 + 3.*param4 + 1.5*param5)))
-              / (1. - pba->Omega0_smg + exp(2.0794415416798357*param4 + 1.0397207708399179*param5)*pba->Omega0_smg);
+              ((-2. + 2.*pba->Omega0_smg)*eftofde_alphaT0 + pow(eftofde_alphaB0,2)*(-8. - 2.*eftofde_alphaT0 + pba->Omega0_smg*(8. + 2.*eftofde_alphaT0)) +
+              eftofde_alphaB0*(1. - 4.*eftofde_alphaT0 + pba->Omega0_smg*(-1. + 4.*eftofde_alphaT0)) + exp(2.0794415416798357*eftofde_w0 + 1.0397207708399179*eftofde_wa)*pba->Omega0_smg*
+              (3. + pow(eftofde_alphaB0,2)*(-8. - 2.*eftofde_alphaT0) - 2.*eftofde_alphaT0 + 3.*eftofde_w0 + 1.5*eftofde_wa + eftofde_alphaB0*(1. - 4.*eftofde_alphaT0 + 3.*eftofde_w0 + 1.5*eftofde_wa)))
+              / (1. - pba->Omega0_smg + exp(2.0794415416798357*eftofde_w0 + 1.0397207708399179*eftofde_wa)*pba->Omega0_smg);
           }
           else{
             pba->parameters_2_smg[0] =
-              (8 * (2 * param3 + 2 * param1* param1 * (4 + param3) + param1 * (-1 + 4 * param3))
-              - 2 * (7 * param3 + 7 * param1 * param1 * (4 + param3) + param1 * (-5 + 14 * param3))
+              (8 * (2 * eftofde_alphaT0 + 2 * eftofde_alphaB0* eftofde_alphaB0 * (4 + eftofde_alphaT0) + eftofde_alphaB0 * (-1 + 4 * eftofde_alphaT0))
+              - 2 * (7 * eftofde_alphaT0 + 7 * eftofde_alphaB0 * eftofde_alphaB0 * (4 + eftofde_alphaT0) + eftofde_alphaB0 * (-5 + 14 * eftofde_alphaT0))
               * pba->Omega0_smg) / (- 8 + 7 * pba->Omega0_smg);
           }
         }
@@ -1882,11 +1796,16 @@ if (strcmp(string1,"nkgb") == 0 || strcmp(string1,"n-kgb") == 0 || strcmp(string
       }
       //accept different names
       if (strcmp(string1,"wowa") == 0 || strcmp(string1,"w0wa") == 0 || strcmp(string1,"cpl") == 0 ) {
-	pba->expansion_model_smg = wowa;
-	flag2=_TRUE_;
-	pba->parameters_size_smg = 3;
+        pba->expansion_model_smg = wowa;
+        flag2=_TRUE_;
+        pba->parameters_size_smg = 3;
         pba->rho_evolution_smg=_FALSE_;
-	class_read_list_of_doubles_or_default("expansion_smg",pba->parameters_smg,0.0,pba->parameters_size_smg);
+        class_read_list_of_doubles_or_default("expansion_smg",pba->parameters_smg,0.0,pba->parameters_size_smg);
+        /* If w0wa was set by eftofde_w0/eftofde_wa parameters for EFTofDE BOSS analysis */
+        if (flag4) {
+          pba->parameters_smg[1] = eftofde_w0;
+          pba->parameters_smg[2] = eftofde_wa;
+        }
       }
       if (strcmp(string1,"wowa_w") == 0 || strcmp(string1,"w0wa_w") == 0 || strcmp(string1,"cpl_w") == 0 ) {
 	pba->expansion_model_smg = wowa_w;

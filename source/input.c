@@ -1249,15 +1249,15 @@ int input_read_parameters(
           eftofde_alphaB0 = - pow(10, eftofde_alphaB0);
         }
       }
-      class_call(parser_read_double(pfc,"eftofde_alpha_T0",&eftofde_alpha_T0,&flag3,errmsg),
+      class_call(parser_read_double(pfc,"alpha_T0",&eftofde_alphaT0,&flag3,errmsg),
                  errmsg,
                  errmsg);
       if (!flag3) {
-        class_call(parser_read_double(pfc,"log_eftofde_alpha_T0",&eftofde_alpha_T0,&flag3,errmsg),
+        class_call(parser_read_double(pfc,"log_alpha_T0",&eftofde_alphaT0,&flag3,errmsg),
                    errmsg,
                    errmsg);
         if (flag3) {
-          eftofde_alpha_T0 = - pow(10, eftofde_alpha_T0);
+          eftofde_alphaT0 = - pow(10, eftofde_alphaT0);
         }
       }
       class_call(parser_read_double(pfc,"eftofde_wa",&eftofde_wa,&flag4,errmsg),
@@ -1372,8 +1372,8 @@ int input_read_parameters(
 
         /* Assuming alpha_M = 0, set alpha_K to expression that yields
            * cs2 = 1 at z = 1 */
-        if(flag1) {
-          if (flag4 || flag5) {
+        if(flag1 || flag3) {
+          if (flag4) {
             pba->parameters_2_smg[0] =
               ((-2. + 2.*pba->Omega0_smg)*eftofde_alphaT0 + pow(eftofde_alphaB0,2)*(-8. - 2.*eftofde_alphaT0 + pba->Omega0_smg*(8. + 2.*eftofde_alphaT0)) +
               eftofde_alphaB0*(1. - 4.*eftofde_alphaT0 + pba->Omega0_smg*(-1. + 4.*eftofde_alphaT0)) + exp(2.0794415416798357*eftofde_w0 + 1.0397207708399179*eftofde_wa)*pba->Omega0_smg*

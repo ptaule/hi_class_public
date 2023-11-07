@@ -2231,6 +2231,12 @@ int background_solve(
               pba->error_message,
               "cannot copy data back to pba->background_table");
 
+      /* Check that cs2 == 1 at z = 0 */
+      if (pba->background_verbose > 0) {
+        if (a > 0.497 && a < 0.503) {
+          printf("cs2 = %f at a = %f.\n", pvecback[pba->index_bg_cs2_smg], a);
+        }
+      }
 
       /* Here we update the minimum values of the stability quantities
        * test will be performed based on the lowest values

@@ -1297,26 +1297,20 @@ int input_read_parameters(
           if (eftofde_w0wa) {
             /* w0wa is on */
             pba->parameters_2_smg[0] =
-            (0.5*(-4.*eftofde_alphaT0 - 1.*pow(2.,2. + 3.*eftofde_w0 + 1.5*eftofde_wa)*pow(eftofde_alphaB0,2)*(4. + pow(2.,1.5*(2.*eftofde_w0 + eftofde_wa))*eftofde_alphaT0) +
-              3.*pow(-1. + pow(2.,1.5*(2.*eftofde_w0 + eftofde_wa)),2)*pow(pba->Omega0_smg,3)*(2. + 2.*eftofde_w0 + eftofde_wa) +
-              eftofde_alphaB0*(2. - 1.*pow(2.,3. + 3.*eftofde_w0 + 1.5*eftofde_wa)*eftofde_alphaT0 + 12.*eftofde_w0 + 10.158883083359672*eftofde_wa) +
-              pba->Omega0_smg*(6. + (pow(2.,4. + 3.*eftofde_w0 + 1.5*eftofde_wa) - 1.*pow(2.,4. + 6.*eftofde_w0 + 3.*eftofde_wa))*pow(eftofde_alphaB0,2) + 8.*eftofde_alphaT0 -
-              1.*pow(2.,3. + 3.*eftofde_w0 + 1.5*eftofde_wa)*eftofde_alphaT0 + 6.*eftofde_w0 + 3.*eftofde_wa +
-              eftofde_alphaB0*(-4. + pow(2.,2. + 3.*eftofde_w0 + 1.5*eftofde_wa) + (pow(2.,3. + 3.*eftofde_w0 + 1.5*eftofde_wa) - 1.*pow(8.,1. + 2.*eftofde_w0 + eftofde_wa))*eftofde_alphaT0 +
-              6.*(-4. + 3.*pow(2.,1.5*(2.*eftofde_w0 + eftofde_wa)))*eftofde_w0 - 20.317766166719345*eftofde_wa + 9.*pow(2.,1.5*(2.*eftofde_w0 + eftofde_wa))*eftofde_wa +
-              2.0794415416798357*pow(2.,1. + 3.*eftofde_w0 + 1.5*eftofde_wa)*eftofde_wa)) +
-              pow(pba->Omega0_smg,2)*(eftofde_alphaB0*(2.*pow(-1. + pow(2.,1.5*(2.*eftofde_w0 + eftofde_wa)),2) +
-              6.*(2. - 3.*pow(2.,1.5*(2.*eftofde_w0 + eftofde_wa)) + pow(2.,3.*(2.*eftofde_w0 + eftofde_wa)))*eftofde_w0 +
-              (10.158883083359672 - 9.*pow(2.,1.5*(2.*eftofde_w0 + eftofde_wa)) - 2.0794415416798357*pow(2.,1. + 3.*eftofde_w0 + 1.5*eftofde_wa) + 3.*pow(8.,2.*eftofde_w0 + eftofde_wa))*
-              eftofde_wa) - 2.*(-1. + pow(2.,1.5*(2.*eftofde_w0 + eftofde_wa)))*(2.*(-1. + pow(2.,1.5*(2.*eftofde_w0 + eftofde_wa)))*eftofde_alphaT0 - 3.*(2. + 2.*eftofde_w0 + eftofde_wa)))))
-              / pow(1. + (-1. + pow(2.,1.5*(2.*eftofde_w0 + eftofde_wa)))*pba->Omega0_smg,2);
+              (6*pow(pba->Omega0_smg,3) + 6*pow(pba->Omega0_smg,3)*eftofde_w0 + 3*pow(pba->Omega0_smg,3)*eftofde_wa +
+              2*pow(pba->Omega0_smg,2)*eftofde_alphaB0 + 6*pow(pba->Omega0_smg,2)*eftofde_w0*eftofde_alphaB0 +
+              3*pow(pba->Omega0_smg,2)*eftofde_wa*eftofde_alphaB0 - 16*pba->Omega0_smg*pow(eftofde_alphaB0,2) -
+              4*pow(pba->Omega0_smg,2)*eftofde_alphaT0 - 8*pba->Omega0_smg*eftofde_alphaB0*eftofde_alphaT0 - 4*pow(eftofde_alphaB0,2)*eftofde_alphaT0 -
+              (4*pow(-1 + pba->Omega0_smg,2)*pow(eftofde_alphaB0,2)*eftofde_alphaT0)/
+               pow(1 + (-1 + pow(2,(3*(2*eftofde_w0 + eftofde_wa))/2.))*pba->Omega0_smg,2) -
+              ((-1 + pba->Omega0_smg)*eftofde_alphaB0*(8*eftofde_alphaB0*eftofde_alphaT0 + 8*pba->Omega0_smg*(2*eftofde_alphaB0 + eftofde_alphaT0) +
+              3*pow(pba->Omega0_smg,2)*(2*eftofde_w0 + eftofde_wa + eftofde_wa*log(4))))/
+              (1 + (-1 + pow(2,(3*(2*eftofde_w0 + eftofde_wa))/2.))*pba->Omega0_smg))/(2.*pow(pba->Omega0_smg,3));
           }
           else {
-            pba->parameters_2_smg[0] = - 2 *
-              (64 * eftofde_alphaT0 + 16 * eftofde_alphaB0 * (10 + eftofde_alphaT0) + eftofde_alphaB0 * eftofde_alphaB0 * (32 + eftofde_alphaT0) -
-               2 * (14 * eftofde_alphaB0 * eftofde_alphaB0 + 56 * eftofde_alphaT0 + eftofde_alphaB0 * (146 + 7 * eftofde_alphaT0)) * pba->Omega0_smg +
-               7 * (19 * eftofde_alphaB0 + 7 * eftofde_alphaT0) * pba->Omega0_smg * pba->Omega0_smg
-               ) / (8 - 7 * pba->Omega0_smg) / (8 - 7 * pba->Omega0_smg);
+            pba->parameters_2_smg[0] =
+              (2*(-8 + 7*pba->Omega0_smg)*eftofde_alphaB0*(-19*pba->Omega0_smg + 4*(5 + eftofde_alphaB0)) -
+              2*pow(8 - 7*pba->Omega0_smg + eftofde_alphaB0,2)*eftofde_alphaT0)/(pow(8 - 7*pba->Omega0_smg,2)*pba->Omega0_smg);
           }
         }
       }

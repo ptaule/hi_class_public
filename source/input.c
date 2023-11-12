@@ -557,6 +557,7 @@ int input_read_parameters(
   int bin;
   int input_verbose=0;
 
+  int eftofde= _FALSE_;
   double eftofde_alphaB0=0;
   double eftofde_alphaT0=0;
   int eftofde_w0wa = _FALSE_;
@@ -1266,6 +1267,9 @@ int input_read_parameters(
                  errmsg,
                  errmsg);
 
+      if (flag1 || flag3) {
+        eftofde = _TRUE_;
+      }
       if (flag4) {
         eftofde_w0wa = _TRUE_;
       }
@@ -1284,16 +1288,12 @@ int input_read_parameters(
         class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
 
         /* Changing to hi_class conventions */
-        if (flag1) {
+        if (eftofde) {
             pba->parameters_2_smg[1] = -2 * eftofde_alphaB0 / pba->Omega0_smg;
-        }
-        if (flag3) {
             pba->parameters_2_smg[3] = eftofde_alphaT0 / pba->Omega0_smg;
-        }
 
-        /* Assuming alpha_M = 0, set alpha_K to expression that yields
-         * cs2 = 1 at z = 1 */
-        if (flag1 || flag3) {
+          /* Assuming alpha_M = 0, set alpha_K to expression that yields
+           * cs2 = 1 at z = 1 */
           if (eftofde_w0wa) {
             /* w0wa is on */
             pba->parameters_2_smg[0] =
@@ -1324,16 +1324,12 @@ int input_read_parameters(
         class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
 
         /* Changing to hi_class conventions */
-        if (flag1) {
+        if (eftofde) {
           pba->parameters_2_smg[1] = -2 * eftofde_alphaB0;
-        }
-        if (flag3) {
           pba->parameters_2_smg[3] = eftofde_alphaT0;
-        }
 
-        /* Assuming alpha_M = 0, set alpha_K to expression that yields
+          /* Assuming alpha_M = 0, set alpha_K to expression that yields
            * cs2 = 1 at z = 1 */
-        if(flag1 || flag3) {
           if (eftofde_w0wa) {
             /* w0wa is on */
             pba->parameters_2_smg[0] =
@@ -1365,16 +1361,12 @@ int input_read_parameters(
         class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
 
         /* Changing to hi_class conventions */
-        if (flag1) {
+        if (eftofde) {
           pba->parameters_2_smg[1] = -2 * eftofde_alphaB0;
-        }
-        if (flag3) {
           pba->parameters_2_smg[3] = eftofde_alphaT0;
-        }
 
-        /* Assuming alpha_M = 0, set alpha_K to expression that yields
+          /* Assuming alpha_M = 0, set alpha_K to expression that yields
            * cs2 = 1 at z = 1 */
-        if(flag1 || flag3) {
           if (eftofde_w0wa) {
             pba->parameters_2_smg[0] =
               (-2*(2*eftofde_alphaT0 + 2*pow(eftofde_alphaB0,2)*(4 + eftofde_alphaT0) + eftofde_alphaB0*(-1 + 4*eftofde_alphaT0)) +

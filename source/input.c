@@ -1385,13 +1385,16 @@ int input_read_parameters(
           }
         }
       }
-      printf("pba->parameters_2_smg = %.2f, %.2f, %.2f, %.2f, %.2f \n",
-             pba->parameters_2_smg[0],
-             pba->parameters_2_smg[1],
-             pba->parameters_2_smg[2],
-             pba->parameters_2_smg[3],
-             pba->parameters_2_smg[4]
-             );
+
+      if (input_verbose > 0) {
+        printf("pba->parameters_2_smg = %.2f, %.2f, %.2f, %.2f, %.2f \n",
+               pba->parameters_2_smg[0],
+               pba->parameters_2_smg[1],
+               pba->parameters_2_smg[2],
+               pba->parameters_2_smg[3],
+               pba->parameters_2_smg[4]
+               );
+      }
 
       if (strcmp(string1,"eft_alphas_power_law") == 0) {
 	pba->gravity_model_smg = eft_alphas_power_law;

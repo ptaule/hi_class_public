@@ -560,6 +560,7 @@ int input_read_parameters(
   int eftofde= _FALSE_;
   double eftofde_alphaB0=0;
   double eftofde_alphaT0=0;
+  double eftofde_eta = 0;
   int eftofde_w0wa = _FALSE_;
   double eftofde_w0 = -1;
   double eftofde_wa = 0;
@@ -1386,16 +1387,6 @@ int input_read_parameters(
         }
       }
 
-      if (input_verbose > 0) {
-        printf("pba->parameters_2_smg = %.2f, %.2f, %.2f, %.2f, %.2f \n",
-               pba->parameters_2_smg[0],
-               pba->parameters_2_smg[1],
-               pba->parameters_2_smg[2],
-               pba->parameters_2_smg[3],
-               pba->parameters_2_smg[4]
-               );
-      }
-
       if (strcmp(string1,"eft_alphas_power_law") == 0) {
 	pba->gravity_model_smg = eft_alphas_power_law;
 	pba->field_evolution_smg = _FALSE_;
@@ -1403,6 +1394,34 @@ int input_read_parameters(
 	flag2=_TRUE_;
 	pba->parameters_2_size_smg = 8;
 	class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
+
+        class_call(parser_read_double(pfc,"eftofde_eta",&eftofde_eta,&flag1,errmsg),
+                   errmsg,
+                   errmsg);
+
+        if (flag1) {
+          pba->parameters_2_smg[6] = eftofde_eta;
+        }
+
+        /* Changing to hi_class conventions */
+        if (eftofde) {
+          pba->parameters_2_smg[2] = -2 * eftofde_alphaB0;
+          pba->parameters_2_smg[4] = eftofde_alphaT0;
+
+          /* Assuming alpha_M = 0, set alpha_K to expression that yields
+           * cs2 = 1 at z = 1 */
+          if (eftofde_w0wa) {
+            class_test(_TRUE_,
+                       ppr->error_message,
+                       "eft_alphas_power_law with w0wa not implemented", NULL);
+          }
+          else{
+            pba->parameters_2_smg[1] =
+              (pow(4,1 - eftofde_eta)*eftofde_alphaB0*(4*(8 - 7*pba->Omega0_smg)*eftofde_alphaB0 +
+              pow(2,eftofde_eta)*(-4 + pba->Omega0_smg*(5 -
+              7*eftofde_eta) + 8*eftofde_eta)))/(-8 + 7*pba->Omega0_smg);
+          }
+        }
       }
 
       if (strcmp(string1,"eft_gammas_power_law") == 0) {
@@ -1777,6 +1796,14 @@ if (strcmp(string1,"nkgb") == 0 || strcmp(string1,"n-kgb") == 0 || strcmp(string
 		 "could not identify gravity_theory value, check that it is one of 'propto_omega', 'propto_scale', 'constant_alphas', 'eft_alphas_power_law', 'eft_gammas_power_law', 'eft_gammas_exponential', 'brans_dicke', 'galileon', 'nKGB', 'quintessence_monomial', 'quintessence_tracker', 'alpha_attractor_canonical' ...");
 
     }// end of loop over models
+
+    if (input_verbose > 0) {
+      printf("pba->parameters_2_smg = ");
+      for (int i = 0; i < pba->parameters_2_size_smg; ++i) {
+        printf("%.2f, ", pba->parameters_2_smg[i]);
+      }
+      printf("\n");
+    }
 
     if(pba->field_evolution_smg == _TRUE_){
 

@@ -1395,16 +1395,9 @@ int input_read_parameters(
 	pba->parameters_2_size_smg = 8;
 	class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
 
-        class_call(parser_read_double(pfc,"eftofde_eta",&eftofde_eta,&flag1,errmsg),
-                   errmsg,
-                   errmsg);
-
-        if (flag1) {
-          pba->parameters_2_smg[6] = eftofde_eta;
-        }
-
         /* Changing to hi_class conventions */
         if (eftofde) {
+          eftofde_eta = pba->parameters_2_smg[6];
           pba->parameters_2_smg[2] = -2 * eftofde_alphaB0;
           pba->parameters_2_smg[4] = eftofde_alphaT0;
 
@@ -1863,6 +1856,14 @@ if (strcmp(string1,"nkgb") == 0 || strcmp(string1,"n-kgb") == 0 || strcmp(string
       class_test(flag2==_FALSE_,
 		 errmsg,
 		 "could not identify expansion_model value, check that it is either lcdm, wowa, wowa_w, wede ...");
+
+      if (input_verbose > 0) {
+        printf("pba->parameters_smg = ");
+        for (int i = 0; i < pba->parameters_size_smg; ++i) {
+          printf("%.2f, ", pba->parameters_smg[i]);
+        }
+        printf("\n");
+      }
 
     }
 

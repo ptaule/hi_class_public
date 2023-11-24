@@ -1398,6 +1398,13 @@ int input_read_parameters(
         /* Changing to hi_class conventions */
         if (eftofde) {
           eftofde_eta = pba->parameters_2_smg[6];
+
+          if (eftofde_eta != pba->parameters_2_smg[5]) {
+            class_test(_TRUE_,
+                       ppr->error_message,
+                       "EFTofDE parametrization not implemented for eta_K != eta_B", NULL);
+          }
+
           pba->parameters_2_smg[2] = -2 * eftofde_alphaB0;
           pba->parameters_2_smg[4] = eftofde_alphaT0;
 
@@ -1410,9 +1417,10 @@ int input_read_parameters(
           }
           else{
             pba->parameters_2_smg[1] =
-              (pow(4,1 - eftofde_eta)*eftofde_alphaB0*(4*(8 - 7*pba->Omega0_smg)*eftofde_alphaB0 +
-              pow(2,eftofde_eta)*(-4 + pba->Omega0_smg*(5 -
-              7*eftofde_eta) + 8*eftofde_eta)))/(-8 + 7*pba->Omega0_smg);
+              -2*eftofde_alphaT0 +
+              2*eftofde_alphaB0*((4 - 5*pba->Omega0_smg)/(8 - 7*pba->Omega0_smg) -
+              (eftofde_alphaB0*eftofde_alphaT0)/pow(4,eftofde_eta) - pow(2,1 - eftofde_eta)*(2*eftofde_alphaB0
+              + eftofde_alphaT0) - eftofde_eta);
           }
         }
       }

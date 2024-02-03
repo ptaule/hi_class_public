@@ -1399,11 +1399,12 @@ int input_read_parameters(
         if (eftofde) {
           eftofde_eta = pba->parameters_2_smg[6];
 
-          if (eftofde_eta != pba->parameters_2_smg[5]) {
-            class_test(_TRUE_,
-                       ppr->error_message,
-                       "EFTofDE parametrization not implemented for eta_K != eta_B", NULL);
-          }
+          class_test(eftofde_eta != pba->parameters_2_smg[5],
+                       errmsg,
+                       "EFTofDE parametrization not implemented for eta_K != eta_B");
+          class_test(pba->parameters_2_smg[7] != 1,
+                     errmsg,
+                     "eta_T not implemented");
 
           pba->parameters_2_smg[2] = -2 * eftofde_alphaB0;
           pba->parameters_2_smg[4] = eftofde_alphaT0;
@@ -1411,9 +1412,14 @@ int input_read_parameters(
           /* Assuming alpha_M = 0, set alpha_K to expression that yields
            * cs2 = 1 at z = 1 */
           if (eftofde_w0wa) {
-            class_test(_TRUE_,
-                       ppr->error_message,
-                       "eft_alphas_power_law with w0wa not implemented", NULL);
+            pba->parameters_2_smg[1] =
+              ((3*pow(2,3*eftofde_w0 + (3*eftofde_wa)/2. + eftofde_eta)*pba->Omega0_smg*(2 + 2*eftofde_w0 + eftofde_wa))
+              /(1 + (-1 + pow(2,(3*(2*eftofde_w0 + eftofde_wa))/2.))*pba->Omega0_smg)
+              - 4*eftofde_alphaT0 - pow(4,1 - eftofde_eta)*pow(eftofde_alphaB0,2)*eftofde_alphaT0
+              - pow(2,3 - eftofde_eta)*eftofde_alphaB0*(2*eftofde_alphaB0 + eftofde_alphaT0)
+              + eftofde_alphaB0*(2 + 6*eftofde_w0 + 3*eftofde_wa + (3*(-1 + pba->Omega0_smg)*(2*eftofde_w0 + eftofde_wa))/
+              (1 + (-1 + pow(2,(3*(2*eftofde_w0 + eftofde_wa))/2.))*pba->Omega0_smg) - 4*eftofde_eta))
+              /2.0;
           }
           else{
             pba->parameters_2_smg[1] =

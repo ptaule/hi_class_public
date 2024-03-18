@@ -559,11 +559,11 @@ int input_read_parameters(
 
   int eftofde= _FALSE_;
   double eftofde_alphaB0=0;
+  double eftofde_alphaM0=0;
   double eftofde_alphaT0=0;
   double eftofde_eta = 0;
   int eftofde_w0wa = _FALSE_;
   double eftofde_w0 = -1;
-  double eftofde_wa = 0;
 
   sigma_B = 2. * pow(_PI_,5) * pow(_k_B_,4) / 15. / pow(_h_P_,3) / pow(_c_,2);
 
@@ -1250,28 +1250,36 @@ int input_read_parameters(
           eftofde_alphaB0 = - pow(10, eftofde_alphaB0);
         }
       }
-      class_call(parser_read_double(pfc,"alpha_T0",&eftofde_alphaT0,&flag3,errmsg),
+      class_call(parser_read_double(pfc,"alpha_M0",&eftofde_alphaM0,&flag3,errmsg),
                  errmsg,
                  errmsg);
       if (!flag3) {
-        class_call(parser_read_double(pfc,"log_alpha_T0",&eftofde_alphaT0,&flag3,errmsg),
+        class_call(parser_read_double(pfc,"log_alpha_M0",&eftofde_alphaM0,&flag3,errmsg),
                    errmsg,
                    errmsg);
         if (flag3) {
+          eftofde_alphaM0 = - pow(10, eftofde_alphaM0);
+        }
+      }
+      class_call(parser_read_double(pfc,"alpha_T0",&eftofde_alphaT0,&flag4,errmsg),
+                 errmsg,
+                 errmsg);
+      if (!flag4) {
+        class_call(parser_read_double(pfc,"log_alpha_T0",&eftofde_alphaT0,&flag4,errmsg),
+                   errmsg,
+                   errmsg);
+        if (flag4) {
           eftofde_alphaT0 = - pow(10, eftofde_alphaT0);
         }
       }
-      class_call(parser_read_double(pfc,"eftofde_wa",&eftofde_wa,&flag4,errmsg),
-                 errmsg,
-                 errmsg);
-      class_call(parser_read_double(pfc,"eftofde_w0",&eftofde_w0,&flag4,errmsg),
-                 errmsg,
-                 errmsg);
 
-      if (flag1 || flag3) {
+      if (flag1 || flag3 || flag4) {
         eftofde = _TRUE_;
       }
-      if (flag4) {
+      class_call(parser_read_double(pfc,"eftofde_w0",&eftofde_w0,&flag1,errmsg),
+                 errmsg,
+                 errmsg);
+      if (flag1) {
         eftofde_w0wa = _TRUE_;
       }
 
@@ -1287,32 +1295,6 @@ int input_read_parameters(
         flag2=_TRUE_;
         pba->parameters_2_size_smg = 5;
         class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
-
-        /* Changing to hi_class conventions */
-        if (eftofde) {
-            pba->parameters_2_smg[1] = -2 * eftofde_alphaB0 / pba->Omega0_smg;
-            pba->parameters_2_smg[3] = eftofde_alphaT0 / pba->Omega0_smg;
-
-          /* Assuming alpha_M = 0, set alpha_K to expression that yields
-           * cs2 = 1 at z = 1 */
-          if (eftofde_w0wa) {
-            /* w0wa is on */
-            pba->parameters_2_smg[0] =
-              (6*pow(pba->Omega0_smg,3) + 6*pow(pba->Omega0_smg,3)*eftofde_w0 + 3*pow(pba->Omega0_smg,3)*eftofde_wa +
-              2*pow(pba->Omega0_smg,2)*eftofde_alphaB0 + 6*pow(pba->Omega0_smg,2)*eftofde_w0*eftofde_alphaB0 +
-              3*pow(pba->Omega0_smg,2)*eftofde_wa*eftofde_alphaB0 - 16*pba->Omega0_smg*pow(eftofde_alphaB0,2) -
-              4*pow(pba->Omega0_smg,2)*eftofde_alphaT0 - 8*pba->Omega0_smg*eftofde_alphaB0*eftofde_alphaT0 - 4*pow(eftofde_alphaB0,2)*eftofde_alphaT0 -
-              (4*pow(-1 + pba->Omega0_smg,2)*pow(eftofde_alphaB0,2)*eftofde_alphaT0)/
-               pow(1 + (-1 + pow(2,(3*(2*eftofde_w0 + eftofde_wa))/2.))*pba->Omega0_smg,2) -
-              ((-1 + pba->Omega0_smg)*eftofde_alphaB0*(8*eftofde_alphaB0*eftofde_alphaT0 + 8*pba->Omega0_smg*(2*eftofde_alphaB0 + eftofde_alphaT0) +
-              3*pow(pba->Omega0_smg,2)*(2*eftofde_w0 + eftofde_wa + eftofde_wa*log(4))))/
-              (1 + (-1 + pow(2,(3*(2*eftofde_w0 + eftofde_wa))/2.))*pba->Omega0_smg))/(2.*pow(pba->Omega0_smg,3));
-          }
-          else {
-            pba->parameters_2_smg[0] =
-              (2*(-8 + 7*pba->Omega0_smg)*eftofde_alphaB0*(-19*pba->Omega0_smg + 4*(5 + eftofde_alphaB0)) -
-              2*pow(8 - 7*pba->Omega0_smg + eftofde_alphaB0,2)*eftofde_alphaT0)/(pow(8 - 7*pba->Omega0_smg,2)*pba->Omega0_smg);
-          }
         }
       }
 
@@ -1323,33 +1305,6 @@ int input_read_parameters(
         flag2=_TRUE_;
         pba->parameters_2_size_smg = 5;
         class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
-
-        /* Changing to hi_class conventions */
-        if (eftofde) {
-          pba->parameters_2_smg[1] = -2 * eftofde_alphaB0;
-          pba->parameters_2_smg[3] = eftofde_alphaT0;
-
-          /* Assuming alpha_M = 0, set alpha_K to expression that yields
-           * cs2 = 1 at z = 1 */
-          if (eftofde_w0wa) {
-            /* w0wa is on */
-            pba->parameters_2_smg[0] =
-              (-4*eftofde_alphaT0 - pow(eftofde_alphaB0,2)*(8 + eftofde_alphaT0) - 2*eftofde_alphaB0*(1 + 2*eftofde_alphaT0) +
-              pba->Omega0_smg*(3*pow(2,2 + 3*eftofde_w0 + (3*eftofde_wa)/2.) + 2*eftofde_alphaB0 -
-              pow(2,1 + 3*eftofde_w0 + (3*eftofde_wa)/2.)*eftofde_alphaB0 + 8*pow(eftofde_alphaB0,2) -
-              pow(2,3 + 3*eftofde_w0 + (3*eftofde_wa)/2.)*pow(eftofde_alphaB0,2) +
-              3*pow(2,1 + 3*eftofde_w0 + (3*eftofde_wa)/2.)*eftofde_w0*(2 + eftofde_alphaB0) +
-              3*pow(2,(3*(2*eftofde_w0 + eftofde_wa))/2.)*eftofde_wa*(2 + eftofde_alphaB0) + 4*eftofde_alphaT0 -
-              pow(2,2 + 3*eftofde_w0 + (3*eftofde_wa)/2.)*eftofde_alphaT0 + 4*eftofde_alphaB0*eftofde_alphaT0 -
-              pow(2,2 + 3*eftofde_w0 + (3*eftofde_wa)/2.)*eftofde_alphaB0*eftofde_alphaT0 + pow(eftofde_alphaB0,2)*eftofde_alphaT0 -
-              pow(2,(3*(2*eftofde_w0 + eftofde_wa))/2.)*pow(eftofde_alphaB0,2)*eftofde_alphaT0))/
-              (2 + 2*(-1 + pow(2,(3*(2*eftofde_w0 + eftofde_wa))/2.))*pba->Omega0_smg);
-          }
-          else {
-            pba->parameters_2_smg[0] =
-              -2*eftofde_alphaT0 - (pow(eftofde_alphaB0,2)*(8 + eftofde_alphaT0))/2. -
-              (2*eftofde_alphaB0*(-4 - 8*eftofde_alphaT0 + pba->Omega0_smg*(2 + 7*eftofde_alphaT0)))/(-8 + 7*pba->Omega0_smg);
-          }
         }
       }
 
@@ -1360,40 +1315,16 @@ int input_read_parameters(
         flag2=_TRUE_;
         pba->parameters_2_size_smg = 5;
         class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
-
-        /* Changing to hi_class conventions */
-        if (eftofde) {
-          pba->parameters_2_smg[1] = -2 * eftofde_alphaB0;
-          pba->parameters_2_smg[3] = eftofde_alphaT0;
-
-          /* Assuming alpha_M = 0, set alpha_K to expression that yields
-           * cs2 = 1 at z = 1 */
-          if (eftofde_w0wa) {
-            pba->parameters_2_smg[0] =
-              (-2*(2*eftofde_alphaT0 + 2*pow(eftofde_alphaB0,2)*(4 + eftofde_alphaT0) + eftofde_alphaB0*(-1 + 4*eftofde_alphaT0)) +
-              pba->Omega0_smg*(3*pow(2,1 + 3*eftofde_w0 + (3*eftofde_wa)/2.)*eftofde_w0*(1 + eftofde_alphaB0) +
-              3*pow(2,(3*(2*eftofde_w0 + eftofde_wa))/2.)*eftofde_wa*(1 + eftofde_alphaB0) -
-              2*(-3*pow(2,(3*(2*eftofde_w0 + eftofde_wa))/2.) +
-              2*(-1 + pow(2,(3*(2*eftofde_w0 + eftofde_wa))/2.))*eftofde_alphaT0 +
-              2*(-1 + pow(2,(3*(2*eftofde_w0 + eftofde_wa))/2.))*pow(eftofde_alphaB0,2)*(4 + eftofde_alphaT0) +
-              (-1 + pow(2,(3*(2*eftofde_w0 + eftofde_wa))/2.))*eftofde_alphaB0*(-1 + 4*eftofde_alphaT0))))/
-              (2 + 2*(-1 + pow(2,(3*(2*eftofde_w0 + eftofde_wa))/2.))*pba->Omega0_smg);
-          }
-          else{
-            pba->parameters_2_smg[0] =
-              -2*eftofde_alphaT0 - 2*pow(eftofde_alphaB0,2)*(4 + eftofde_alphaT0) -
-              (2*eftofde_alphaB0*(4 - 16*eftofde_alphaT0 + pba->Omega0_smg*(-5 + 14*eftofde_alphaT0)))/(-8 + 7*pba->Omega0_smg);
-          }
         }
       }
 
       if (strcmp(string1,"eft_alphas_power_law") == 0) {
-	pba->gravity_model_smg = eft_alphas_power_law;
-	pba->field_evolution_smg = _FALSE_;
-	pba->M_pl_evolution_smg = _TRUE_;
-	flag2=_TRUE_;
-	pba->parameters_2_size_smg = 8;
-	class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
+        pba->gravity_model_smg = eft_alphas_power_law;
+        pba->field_evolution_smg = _FALSE_;
+        pba->M_pl_evolution_smg = _TRUE_;
+        flag2=_TRUE_;
+        pba->parameters_2_size_smg = 8;
+        class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
 
         /* Changing to hi_class conventions */
         if (eftofde) {
@@ -1407,26 +1338,21 @@ int input_read_parameters(
                      "eta_T not implemented");
 
           pba->parameters_2_smg[2] = -2 * eftofde_alphaB0;
-          pba->parameters_2_smg[4] = eftofde_alphaT0;
+          // pba->parameters_2_smg[3] = eftofde_alphaM0;
+          pba->parameters_2_smg[3] = eftofde_alphaT0;
 
-          /* Assuming alpha_M = 0, set alpha_K to expression that yields
-           * cs2 = 1 at z = 1 */
+          /* Set alpha_K to expression that yields cs2 = 1 at z = 1 */
           if (eftofde_w0wa) {
-            pba->parameters_2_smg[1] =
-              ((3*pow(2,3*eftofde_w0 + (3*eftofde_wa)/2. + eftofde_eta)*pba->Omega0_smg*(2 + 2*eftofde_w0 + eftofde_wa))
-              /(1 + (-1 + pow(2,(3*(2*eftofde_w0 + eftofde_wa))/2.))*pba->Omega0_smg)
-              - 4*eftofde_alphaT0 - pow(4,1 - eftofde_eta)*pow(eftofde_alphaB0,2)*eftofde_alphaT0
-              - pow(2,3 - eftofde_eta)*eftofde_alphaB0*(2*eftofde_alphaB0 + eftofde_alphaT0)
-              + eftofde_alphaB0*(2 + 6*eftofde_w0 + 3*eftofde_wa + (3*(-1 + pba->Omega0_smg)*(2*eftofde_w0 + eftofde_wa))/
-              (1 + (-1 + pow(2,(3*(2*eftofde_w0 + eftofde_wa))/2.))*pba->Omega0_smg) - 4*eftofde_eta))
-              /2.0;
-          }
-          else{
-            pba->parameters_2_smg[1] =
-              -2*eftofde_alphaT0 +
-              2*eftofde_alphaB0*((4 - 5*pba->Omega0_smg)/(8 - 7*pba->Omega0_smg) -
-              (eftofde_alphaB0*eftofde_alphaT0)/pow(4,eftofde_eta) - pow(2,1 - eftofde_eta)*(2*eftofde_alphaB0
-              + eftofde_alphaT0) - eftofde_eta);
+            pba->parameters_2_smg[1] = (
+              3*pow(2,eftofde_eta) - 2*eftofde_alphaT0 -
+              pow(2,1 - 2*eftofde_eta)*(pow(2,2 + eftofde_eta) + eftofde_alphaT0)*
+              pow(eftofde_alphaB0,2) + 2*eftofde_alphaM0 +
+              (eftofde_alphaB0*(-4*eftofde_alphaT0 + 2*eftofde_alphaM0 +
+              pow(2,eftofde_eta)*(1 - 2*eftofde_eta)))/pow(2,eftofde_eta) -
+              (3*pow(2,3 + eftofde_eta)*(1 - pba->Omega0_smg))/
+              (exp(eftofde_alphaM0/pow(2,eftofde_eta)/eftofde_eta)*(1 + 7*(1 - pba->Omega0_smg)))
+              - (3*pow(8,eftofde_w0)*(pow(2,eftofde_eta) + eftofde_alphaB0)*pba->Omega0_smg*eftofde_w0)/
+              (-1 + pba->Omega0_smg - pow(8,eftofde_w0)*pba->Omega0_smg));
           }
         }
       }

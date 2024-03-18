@@ -557,14 +557,6 @@ int input_read_parameters(
   int bin;
   int input_verbose=0;
 
-  int eftofde= _FALSE_;
-  double eftofde_alphaB0=0;
-  double eftofde_alphaM0=0;
-  double eftofde_alphaT0=0;
-  double eftofde_eta = 0;
-  int eftofde_w0wa = _FALSE_;
-  double eftofde_w0 = -1;
-
   sigma_B = 2. * pow(_PI_,5) * pow(_k_B_,4) / 15. / pow(_h_P_,3) / pow(_c_,2);
 
   /** - set all parameters (input and precision) to default values */
@@ -1229,133 +1221,60 @@ int input_read_parameters(
     if (has_dxdy_guess_smg == _FALSE_)
       pba->tuning_dxdy_guess_smg = 1;
 
-      /* For EFTofDE BOSS analysis, read and temporarily store w0/wa and
-      * alpha_B0, alpha_T0
-      * flag2 is used for identifying model, therefore we use flag1 and
-      * flag3 for alpha_B0 and alpha_T0 respectively.
-      * For w0wa, one needs to provide w0 or wa, this "turns on" w0wa */
-
-      flag1 = _FALSE_;
-      flag3 = _FALSE_;
-      flag4 = _FALSE_;
-      class_call(parser_read_double(pfc,"alpha_B0",&eftofde_alphaB0,&flag1,errmsg),
-                 errmsg,
-                 errmsg);
-      /* If alpha_B0 not given, look for log_alpha_B0. If both given, choose alpha_B0 */
-      if (!flag1) {
-        class_call(parser_read_double(pfc,"log_alpha_B0",&eftofde_alphaB0,&flag1,errmsg),
-                   errmsg,
-                   errmsg);
-        if (flag1) {
-          eftofde_alphaB0 = - pow(10, eftofde_alphaB0);
-        }
-      }
-      class_call(parser_read_double(pfc,"alpha_M0",&eftofde_alphaM0,&flag3,errmsg),
-                 errmsg,
-                 errmsg);
-      if (!flag3) {
-        class_call(parser_read_double(pfc,"log_alpha_M0",&eftofde_alphaM0,&flag3,errmsg),
-                   errmsg,
-                   errmsg);
-        if (flag3) {
-          eftofde_alphaM0 = - pow(10, eftofde_alphaM0);
-        }
-      }
-      class_call(parser_read_double(pfc,"alpha_T0",&eftofde_alphaT0,&flag4,errmsg),
-                 errmsg,
-                 errmsg);
-      if (!flag4) {
-        class_call(parser_read_double(pfc,"log_alpha_T0",&eftofde_alphaT0,&flag4,errmsg),
-                   errmsg,
-                   errmsg);
-        if (flag4) {
-          eftofde_alphaT0 = - pow(10, eftofde_alphaT0);
-        }
-      }
-
-      if (flag1 || flag3 || flag4) {
-        eftofde = _TRUE_;
-      }
-      class_call(parser_read_double(pfc,"eftofde_w0",&eftofde_w0,&flag1,errmsg),
-                 errmsg,
-                 errmsg);
-      if (flag1) {
-        eftofde_w0wa = _TRUE_;
-      }
-
     /** Loop over the different models
      * flag2 keeps track of whether model has been identified
      */
       flag2=_FALSE_;
 
       if (strcmp(string1,"propto_omega") == 0) {
-        pba->gravity_model_smg = propto_omega;
-        pba->field_evolution_smg = _FALSE_;
-        pba->M_pl_evolution_smg = _TRUE_;
-        flag2=_TRUE_;
-        pba->parameters_2_size_smg = 5;
-        class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
-        }
+	pba->gravity_model_smg = propto_omega;
+	pba->field_evolution_smg = _FALSE_;
+	pba->M_pl_evolution_smg = _TRUE_;
+	flag2=_TRUE_;
+	pba->parameters_2_size_smg = 5;
+	class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
       }
 
       if (strcmp(string1,"propto_scale") == 0) {
-        pba->gravity_model_smg = propto_scale;
-        pba->field_evolution_smg = _FALSE_;
-        pba->M_pl_evolution_smg = _TRUE_;
-        flag2=_TRUE_;
-        pba->parameters_2_size_smg = 5;
-        class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
-        }
+	pba->gravity_model_smg = propto_scale;
+	pba->field_evolution_smg = _FALSE_;
+	pba->M_pl_evolution_smg = _TRUE_;
+	flag2=_TRUE_;
+	pba->parameters_2_size_smg = 5;
+	class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
       }
 
       if (strcmp(string1,"constant_alphas") == 0) {
-        pba->gravity_model_smg = constant_alphas;
-        pba->field_evolution_smg = _FALSE_;
-        pba->M_pl_evolution_smg = _TRUE_;
-        flag2=_TRUE_;
-        pba->parameters_2_size_smg = 5;
-        class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
-        }
+	pba->gravity_model_smg = constant_alphas;
+	pba->field_evolution_smg = _FALSE_;
+	pba->M_pl_evolution_smg = _TRUE_;
+	flag2=_TRUE_;
+	pba->parameters_2_size_smg = 5;
+	class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
       }
 
       if (strcmp(string1,"eft_alphas_power_law") == 0) {
-        pba->gravity_model_smg = eft_alphas_power_law;
+	pba->gravity_model_smg = eft_alphas_power_law;
+	pba->field_evolution_smg = _FALSE_;
+	pba->M_pl_evolution_smg = _TRUE_;
+	flag2=_TRUE_;
+	pba->parameters_2_size_smg = 8;
+	class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
+      }
+
+      if (strcmp(string1,"quasi_static_alphas_power_law") == 0) {
+        pba->gravity_model_smg = quasi_static_alphas_power_law;
         pba->field_evolution_smg = _FALSE_;
         pba->M_pl_evolution_smg = _TRUE_;
         flag2=_TRUE_;
-        pba->parameters_2_size_smg = 8;
+        pba->parameters_2_size_smg = 4;
+        /* c_b, c_m, c_t, eta */
         class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
-
-        /* Changing to hi_class conventions */
-        if (eftofde) {
-          eftofde_eta = pba->parameters_2_smg[6];
-
-          class_test(eftofde_eta != pba->parameters_2_smg[5],
-                       errmsg,
-                       "EFTofDE parametrization not implemented for eta_K != eta_B");
-          class_test(pba->parameters_2_smg[7] != 1,
-                     errmsg,
-                     "eta_T not implemented");
-
-          pba->parameters_2_smg[2] = -2 * eftofde_alphaB0;
-          // pba->parameters_2_smg[3] = eftofde_alphaM0;
-          pba->parameters_2_smg[3] = eftofde_alphaT0;
-
-          /* Set alpha_K to expression that yields cs2 = 1 at z = 1 */
-          if (eftofde_w0wa) {
-            pba->parameters_2_smg[1] = (
-              3*pow(2,eftofde_eta) - 2*eftofde_alphaT0 -
-              pow(2,1 - 2*eftofde_eta)*(pow(2,2 + eftofde_eta) + eftofde_alphaT0)*
-              pow(eftofde_alphaB0,2) + 2*eftofde_alphaM0 +
-              (eftofde_alphaB0*(-4*eftofde_alphaT0 + 2*eftofde_alphaM0 +
-              pow(2,eftofde_eta)*(1 - 2*eftofde_eta)))/pow(2,eftofde_eta) -
-              (3*pow(2,3 + eftofde_eta)*(1 - pba->Omega0_smg))/
-              (exp(eftofde_alphaM0/pow(2,eftofde_eta)/eftofde_eta)*(1 + 7*(1 - pba->Omega0_smg)))
-              - (3*pow(8,eftofde_w0)*(pow(2,eftofde_eta) + eftofde_alphaB0)*pba->Omega0_smg*eftofde_w0)/
-              (-1 + pba->Omega0_smg - pow(8,eftofde_w0)*pba->Omega0_smg));
-          }
+        /* alphaK approx. for a -> 0 only implemented for eta=1.5 and eta=3 */
+        class_test(!(pba->parameters_2_smg[3] == 1.5 || pba->parameters_2_smg[3] == 3),
+                   errmsg,
+                   "alphaK approx. only implemented for eta=1.5, 3");
         }
-      }
 
       if (strcmp(string1,"eft_gammas_power_law") == 0) {
 	pba->gravity_model_smg = eft_gammas_power_law;
@@ -1730,14 +1649,6 @@ if (strcmp(string1,"nkgb") == 0 || strcmp(string1,"n-kgb") == 0 || strcmp(string
 
     }// end of loop over models
 
-    if (input_verbose > 0) {
-      printf("pba->parameters_2_smg = ");
-      for (int i = 0; i < pba->parameters_2_size_smg; ++i) {
-        printf("%.2f, ", pba->parameters_2_smg[i]);
-      }
-      printf("\n");
-    }
-
     if(pba->field_evolution_smg == _TRUE_){
 
       //TODO: include generic stuff for covariant theories
@@ -1763,16 +1674,11 @@ if (strcmp(string1,"nkgb") == 0 || strcmp(string1,"n-kgb") == 0 || strcmp(string
       }
       //accept different names
       if (strcmp(string1,"wowa") == 0 || strcmp(string1,"w0wa") == 0 || strcmp(string1,"cpl") == 0 ) {
-        pba->expansion_model_smg = wowa;
-        flag2=_TRUE_;
-        pba->parameters_size_smg = 3;
+	pba->expansion_model_smg = wowa;
+	flag2=_TRUE_;
+	pba->parameters_size_smg = 3;
         pba->rho_evolution_smg=_FALSE_;
-        class_read_list_of_doubles_or_default("expansion_smg",pba->parameters_smg,0.0,pba->parameters_size_smg);
-        /* If w0wa was set by eftofde_w0/eftofde_wa parameters for EFTofDE BOSS analysis */
-        if (eftofde_w0wa) {
-          pba->parameters_smg[1] = eftofde_w0;
-          pba->parameters_smg[2] = eftofde_wa;
-        }
+	class_read_list_of_doubles_or_default("expansion_smg",pba->parameters_smg,0.0,pba->parameters_size_smg);
       }
       if (strcmp(string1,"wowa_w") == 0 || strcmp(string1,"w0wa_w") == 0 || strcmp(string1,"cpl_w") == 0 ) {
 	pba->expansion_model_smg = wowa_w;
@@ -1796,14 +1702,6 @@ if (strcmp(string1,"nkgb") == 0 || strcmp(string1,"n-kgb") == 0 || strcmp(string
       class_test(flag2==_FALSE_,
 		 errmsg,
 		 "could not identify expansion_model value, check that it is either lcdm, wowa, wowa_w, wede ...");
-
-      if (input_verbose > 0) {
-        printf("pba->parameters_smg = ");
-        for (int i = 0; i < pba->parameters_size_smg; ++i) {
-          printf("%.2f, ", pba->parameters_smg[i]);
-        }
-        printf("\n");
-      }
 
     }
 

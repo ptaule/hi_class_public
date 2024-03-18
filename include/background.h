@@ -17,6 +17,7 @@ enum spatial_curvature {flat,open,closed};
 enum gravity_model {propto_omega, propto_scale,
     constant_alphas,
     eft_alphas_power_law, eft_gammas_power_law, eft_gammas_exponential,
+    quasi_static_alphas_power_law,
     galileon, nkgb,
     brans_dicke,
     quintessence_monomial, quintessence_tracker,

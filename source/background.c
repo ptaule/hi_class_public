@@ -2231,13 +2231,6 @@ int background_solve(
               pba->error_message,
               "cannot copy data back to pba->background_table");
 
-      /* Check that cs2 == 1 at z = 0 */
-      if (pba->background_verbose > 0) {
-        if (a > 0.497 && a < 0.503) {
-          printf("cs2 = %f at a = %f.\n", pvecback[pba->index_bg_cs2_smg], a);
-        }
-      }
-
       /* Here we update the minimum values of the stability quantities
        * test will be performed based on the lowest values
        */
@@ -3734,6 +3727,42 @@ int background_gravity_functions(
       pvecback[pba->index_bg_delta_M2_smg] = delta_M_pl; //M2-1
       pvecback[pba->index_bg_M2_smg] = 1.+delta_M_pl;
     }
+    else if (pba->gravity_model_smg == quasi_static_alphas_power_law) {
+      double c_b = pba->parameters_2_smg[0];
+      double c_m = pba->parameters_2_smg[1];
+      double c_t = pba->parameters_2_smg[2];
+
+      double eta = pba->parameters_2_smg[3];
+
+      /* Change to hi_class convention */
+      double bra = -2 * c_b* pow(a, eta);
+      double bra_p = -2 * c_b * eta * pow(a, eta-1);
+      double run = c_m*pow(a, eta);
+      double ten = c_t*pow(a, eta);
+      double M2 = exp(c_m * pow(a, eta)/eta);
+      double dM2 = M2 - 1;
+
+      double H = pvecback[pba->index_bg_H];
+      double rho_smg = pvecback[pba->index_bg_rho_smg];
+      double rho_tot = pvecback[pba->index_bg_rho_tot_wo_smg];
+      double p_smg = pvecback[pba->index_bg_p_smg];
+      double p_tot = pvecback[pba->index_bg_p_tot_wo_smg];
+
+      pvecback[pba->index_bg_braiding_smg] = bra;
+      pvecback[pba->index_bg_mpl_running_smg] = run;
+      pvecback[pba->index_bg_tensor_excess_smg] = ten;
+      pvecback[pba->index_bg_M2_smg] = M2;
+      pvecback[pba->index_bg_delta_M2_smg] = dM2;
+
+      double lambda_2 = (- 2.*dM2 + bra*M2)*(rho_tot + p_tot)*(-3.)/2.*pow(H,-2)*pow(M2,-1) + ((-2.) + bra)*(rho_smg + p_smg)*(-3.)/2.*pow(H,-2) + a * bra_p;
+      double cs2num = ((-2.) + bra)*((-1.)*bra + (-2.)*run + 2.*ten + (-1.)*bra*ten)*1./2. + lambda_2;
+
+      double kin = cs2num - 3./2.*pow(bra,2);
+      if (kin < 1e-25) {
+        kin = 1e-25;
+      }
+      pvecback[pba->index_bg_kineticity_smg] = kin;
+    }
     else if ((pba->gravity_model_smg == eft_gammas_power_law) || (pba->gravity_model_smg == eft_gammas_exponential)) {
 
       double Omega=0., g1=0., g2=0., g3=0., Omega_p=0., Omega_pp=0., g3_p=0.;
@@ -3929,6 +3958,12 @@ int background_gravity_parameters(
      printf(" -> M_*^2_0 = %g, c_K = %g, c_B = %g, c_T = %g, M_*^2_exp = %g, c_K_exp = %g, c_B_exp = %g, c_T_exp = %g\n",
 	    pba->parameters_2_smg[0],pba->parameters_2_smg[1],pba->parameters_2_smg[2],pba->parameters_2_smg[3],
 	    pba->parameters_2_smg[4],pba->parameters_2_smg[5],pba->parameters_2_smg[6],pba->parameters_2_smg[7]);
+     break;
+
+   case quasi_static_alphas_power_law:
+     printf("Modified gravity: quasi_static_alphas_power_law with parameters: \n");
+     printf(" -> c_B = %g, c_M = %g, c_T = %g, eta = %g\n",
+	    pba->parameters_2_smg[0],pba->parameters_2_smg[1],pba->parameters_2_smg[2],pba->parameters_2_smg[3]);
      break;
 
    case eft_gammas_power_law:

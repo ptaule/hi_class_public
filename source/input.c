@@ -1672,6 +1672,13 @@ if (strcmp(string1,"nkgb") == 0 || strcmp(string1,"n-kgb") == 0 || strcmp(string
         pba->rho_evolution_smg=_FALSE_;
 	class_read_list_of_doubles_or_default("expansion_smg",pba->parameters_smg,0.0,pba->parameters_size_smg);
       }
+      if (strcmp(string1,"evolve_Mp") == 0) {
+	pba->expansion_model_smg = evolve_Mp;
+	flag2=_TRUE_;
+	pba->parameters_size_smg = 1;
+        pba->rho_evolution_smg=_FALSE_;
+	class_read_list_of_doubles_or_default("expansion_smg",pba->parameters_smg,0.0,pba->parameters_size_smg);
+      }
       //accept different names
       if (strcmp(string1,"wowa") == 0 || strcmp(string1,"w0wa") == 0 || strcmp(string1,"cpl") == 0 ) {
 	pba->expansion_model_smg = wowa;

@@ -78,6 +78,8 @@
  * -# background_free() at the end, when no more calls to the previous functions are needed
  */
 
+#include <gsl/gsl_sf_gamma.h>
+
 #include "background.h"
 
 /**
@@ -3600,6 +3602,21 @@ int background_gravity_functions(
       pvecback[pba->index_bg_rho_smg] = Omega_const_smg*pow(pba->H0,2);
       pvecback[pba->index_bg_p_smg] = -Omega_const_smg*pow(pba->H0,2);
     }
+    if (pba->expansion_model_smg == evolve_Mp){
+      double c_m = pba->parameters_2_smg[1];
+      double eta = pba->parameters_2_smg[3];
+
+      // double Omega_const_smg = pba->parameters_smg[0];
+      double Omega_const_smg = 0.6878622;
+
+      pvecback[pba->index_bg_rho_smg] = (
+        3*pow(pba->H0,2)*(-(((-1 + exp((pow(a,eta)*c_m)/eta))*(eta - 3*exp(c_m/eta)*pow(c_m/eta,3/eta)*(1 - Omega_const_smg)*gsl_sf_gamma_inc(-3/eta,c_m/eta) +
+        (3*exp(c_m/eta)*pow((pow(a,eta)*c_m)/eta,3/eta)*(1 - Omega_const_smg)*gsl_sf_gamma_inc(-3/eta,(pow(a,eta)*c_m)/eta))/pow(a,3)))/eta) +
+        (exp((pow(a,eta)*c_m)/eta)*(pow(a,3)*Omega_const_smg + pow(a,3)*exp(c_m/eta)*pow(c_m/eta,3/eta)*(1 - Omega_const_smg)*gsl_sf_gamma_inc((-3 + eta)/eta,c_m/eta) -
+        exp(c_m/eta)*pow((pow(a,eta)*c_m)/eta,3/eta)*(1 - Omega_const_smg)*gsl_sf_gamma_inc((-3 + eta)/eta,(pow(a,eta)*c_m)/eta)))/pow(a,3))
+      );
+      pvecback[pba->index_bg_p_smg] = -pvecback[pba->index_bg_rho_smg];
+    }
 
     if (pba->expansion_model_smg == wowa){
 
@@ -3991,6 +4008,11 @@ int background_gravity_parameters(
       printf("Parameterized model with LCDM expansion \n");
       printf("-> Omega_smg = %f \n",pba->parameters_smg[0]);
       break;
+
+      case evolve_Mp:
+        printf("Parameterized model with evolve Mp expansion \n");
+        printf("-> Omega_smg = %f \n",pba->parameters_smg[0]);
+        break;
 
       case wowa:
       printf("Parameterized model with CPL expansion \n");

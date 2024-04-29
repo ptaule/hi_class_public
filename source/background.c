@@ -78,7 +78,7 @@
  * -# background_free() at the end, when no more calls to the previous functions are needed
  */
 
-#include <gsl/gsl_sf_gamma.h>
+#include <gsl/gsl_sf_expint.h>
 
 #include "background.h"
 
@@ -3606,15 +3606,29 @@ int background_gravity_functions(
       double c_m = pba->parameters_2_smg[1];
       double eta = pba->parameters_2_smg[3];
 
-      // double Omega_const_smg = pba->parameters_smg[0];
-      double Omega_const_smg = 0.6878622;
+      double Omega_const_smg = pba->parameters_smg[0];
 
-      pvecback[pba->index_bg_rho_smg] = (
-        3*pow(pba->H0,2)*(-(((-1 + exp((pow(a,eta)*c_m)/eta))*(eta - 3*exp(c_m/eta)*pow(c_m/eta,3/eta)*(1 - Omega_const_smg)*gsl_sf_gamma_inc(-3/eta,c_m/eta) +
-        (3*exp(c_m/eta)*pow((pow(a,eta)*c_m)/eta,3/eta)*(1 - Omega_const_smg)*gsl_sf_gamma_inc(-3/eta,(pow(a,eta)*c_m)/eta))/pow(a,3)))/eta) +
-        (exp((pow(a,eta)*c_m)/eta)*(pow(a,3)*Omega_const_smg + pow(a,3)*exp(c_m/eta)*pow(c_m/eta,3/eta)*(1 - Omega_const_smg)*gsl_sf_gamma_inc((-3 + eta)/eta,c_m/eta) -
-        exp(c_m/eta)*pow((pow(a,eta)*c_m)/eta,3/eta)*(1 - Omega_const_smg)*gsl_sf_gamma_inc((-3 + eta)/eta,(pow(a,eta)*c_m)/eta)))/pow(a,3))
-      );
+      if (fabs(pba->parameters_2_smg[3] - 3.0) < 0.001) {
+        pvecback[pba->index_bg_rho_smg] = (
+          (pow(pba->H0,2)*((3*(-1 + Omega_const_smg))/exp(c_m/3.) -
+          (3*(-1 + Omega_const_smg))/(pow(a,3)*exp((pow(a,3)*c_m)/3.)) +
+          (3*(-1 + pow(a,3) + Omega_const_smg))/pow(a,3) +
+          c_m*(-1 + Omega_const_smg)*gsl_sf_expint_Ei(-c_m/3.0) -
+          c_m*(-1 + Omega_const_smg)*gsl_sf_expint_Ei(-(pow(a,3)*c_m)/3.0)))/3.
+        );
+      }
+      else if (fabs(pba->parameters_2_smg[3] - 1.5) < 0.001) {
+        pvecback[pba->index_bg_rho_smg] = (
+          (pow(pba->H0,2)*(9 - 9/pow(a,3) - 9/exp((2*c_m)/3.) + (6*c_m)/exp((2*c_m)/3.) +
+          9/(pow(a,3)*exp((2*pow(a,1.5)*c_m)/3.)) -
+          (6*c_m)/(pow(a,1.5)*exp((2*pow(a,1.5)*c_m)/3.)) + (9*Omega_const_smg)/pow(a,3) +
+          (9*Omega_const_smg)/exp((2*c_m)/3.) - (6*c_m*Omega_const_smg)/exp((2*c_m)/3.) -
+          (9*Omega_const_smg)/(pow(a,3)*exp((2*pow(a,1.5)*c_m)/3.)) +
+          (6*c_m*Omega_const_smg)/(pow(a,1.5)*exp((2*pow(a,1.5)*c_m)/3.)) -
+          4*pow(c_m,2)*(-1 + Omega_const_smg)*gsl_sf_expint_Ei((-2*c_m)/3.) +
+          4*pow(c_m,2)*(-1 + Omega_const_smg)*gsl_sf_expint_Ei((-2*pow(a,1.5)*c_m)/3.)))/9.
+        );
+      }
       pvecback[pba->index_bg_p_smg] = -pvecback[pba->index_bg_rho_smg];
     }
 

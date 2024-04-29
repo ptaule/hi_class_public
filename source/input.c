@@ -1271,7 +1271,8 @@ int input_read_parameters(
         /* c_b, c_m, c_t, eta */
         class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
         /* alphaK approx. for a -> 0 only implemented for eta=1.5 and eta=3 */
-        class_test(!(pba->parameters_2_smg[3] == 1.5 || pba->parameters_2_smg[3] == 3),
+        class_test(fabs(pba->parameters_2_smg[3] - 3) < 0.001 &&
+                   fabs(pba->parameters_2_smg[3] - 1.5) < 0.001,
                    errmsg,
                    "alphaK approx. only implemented for eta=1.5, 3");
         }
@@ -1673,11 +1674,14 @@ if (strcmp(string1,"nkgb") == 0 || strcmp(string1,"n-kgb") == 0 || strcmp(string
 	class_read_list_of_doubles_or_default("expansion_smg",pba->parameters_smg,0.0,pba->parameters_size_smg);
       }
       if (strcmp(string1,"evolve_Mp") == 0) {
-	pba->expansion_model_smg = evolve_Mp;
-	flag2=_TRUE_;
-	pba->parameters_size_smg = 1;
+        class_test(pba->gravity_model_smg != quasi_static_alphas_power_law,
+                   errmsg,
+                   "expansion_model = evolve_Mp works only with gravity_model = quasi_static_alphas_power_law");
+        pba->expansion_model_smg = evolve_Mp;
+        flag2=_TRUE_;
+        pba->parameters_size_smg = 1;
         pba->rho_evolution_smg=_FALSE_;
-	class_read_list_of_doubles_or_default("expansion_smg",pba->parameters_smg,0.0,pba->parameters_size_smg);
+        class_read_list_of_doubles_or_default("expansion_smg",pba->parameters_smg,0.0,pba->parameters_size_smg);
       }
       //accept different names
       if (strcmp(string1,"wowa") == 0 || strcmp(string1,"w0wa") == 0 || strcmp(string1,"cpl") == 0 ) {

@@ -3843,7 +3843,15 @@ int background_gravity_functions(
 
     pvecback[pba->index_bg_H] = sqrt(rho_tot-pba->K/a/a);
     /** - compute derivative of H with respect to conformal time */
-    pvecback[pba->index_bg_H_prime] = - (3./2.) * (rho_tot + p_tot) * a + pba->K/a;
+    if (pba->expansion_model_smg == evolve_Mp) {
+      double c_m = pba->parameters_2_smg[1];
+      double eta = pba->parameters_2_smg[3];
+      double M2 = exp(c_m * pow(a, eta)/eta);
+      pvecback[pba->index_bg_H_prime] = - (3./2.) * (rho_tot + p_tot) * a / M2 + pba->K/a;
+    }
+    else {
+      pvecback[pba->index_bg_H_prime] = - (3./2.) * (rho_tot + p_tot) * a + pba->K/a;
+    }
 
     //add friction term
     if (pba->hubble_evolution == _TRUE_ && pba->initial_conditions_set_smg == _TRUE_){

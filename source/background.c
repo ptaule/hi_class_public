@@ -3608,16 +3608,33 @@ int background_gravity_functions(
 
       double Omega_const_smg = pba->parameters_smg[0];
 
+      double exp_ei_a_value = 0;
       if (fabs(pba->parameters_2_smg[3] - 3.0) < 0.001) {
+        /* For small a, use leading taylor expression for gsl_sf_expint_Ei to
+         * avoid underflow error. exp_ei_a_value = gsl_sf_expint_Ei(-a^3 c_m/3) */
+        if (a < 1e-6) {
+          exp_ei_a_value = 0.577216 + 3*log(a) + log(c_m/3.);
+        }
+        else {
+          exp_ei_a_value = gsl_sf_expint_Ei(-(pow(a,3)*c_m)/3.0);
+        }
         pvecback[pba->index_bg_rho_smg] = (
           (pow(pba->H0,2)*((3*(-1 + Omega_const_smg))/exp(c_m/3.) -
           (3*(-1 + Omega_const_smg))/(pow(a,3)*exp((pow(a,3)*c_m)/3.)) +
           (3*(-1 + pow(a,3) + Omega_const_smg))/pow(a,3) +
           c_m*(-1 + Omega_const_smg)*gsl_sf_expint_Ei(-c_m/3.0) -
-          c_m*(-1 + Omega_const_smg)*gsl_sf_expint_Ei(-(pow(a,3)*c_m)/3.0)))/3.
+          c_m*(-1 + Omega_const_smg)*exp_ei_a_value))/3.
         );
       }
       else if (fabs(pba->parameters_2_smg[3] - 1.5) < 0.001) {
+        /* For small a, use leading taylor expression for gsl_sf_expint_Ei to
+         * avoid underflow error. exp_ei_a_value = gsl_sf_expint_Ei(-2 * a^(3/2) c_m/3) */
+        if (a < 1e-6) {
+          exp_ei_a_value = 0.577216 + 1.5*log(a) + 2*log((2*c_m)/3.);
+        }
+        else {
+          exp_ei_a_value = gsl_sf_expint_Ei((-2*pow(a,1.5)*c_m)/3.);
+        }
         pvecback[pba->index_bg_rho_smg] = (
           (pow(pba->H0,2)*(9 - 9/pow(a,3) - 9/exp((2*c_m)/3.) + (6*c_m)/exp((2*c_m)/3.) +
           9/(pow(a,3)*exp((2*pow(a,1.5)*c_m)/3.)) -
@@ -3626,7 +3643,7 @@ int background_gravity_functions(
           (9*Omega_const_smg)/(pow(a,3)*exp((2*pow(a,1.5)*c_m)/3.)) +
           (6*c_m*Omega_const_smg)/(pow(a,1.5)*exp((2*pow(a,1.5)*c_m)/3.)) -
           4*pow(c_m,2)*(-1 + Omega_const_smg)*gsl_sf_expint_Ei((-2*c_m)/3.) +
-          4*pow(c_m,2)*(-1 + Omega_const_smg)*gsl_sf_expint_Ei((-2*pow(a,1.5)*c_m)/3.)))/9.
+          4*pow(c_m,2)*(-1 + Omega_const_smg)*exp_ei_a_value))/9.
         );
       }
       pvecback[pba->index_bg_p_smg] = -pvecback[pba->index_bg_rho_smg];

@@ -6383,7 +6383,22 @@ int perturb_einstein(
           ppw->pvecmetric[ppw->index_mt_h_prime] = y[ppw->pv->index_pt_h_prime_from_trace_smg];
         }
         else{
-          ppw->pvecmetric[ppw->index_mt_h_prime] = (- 4.*pow(H,-1)*pow(k,2)*y[ppw->pv->index_pt_eta]*pow(a,-1) - 6.*pow(H,-1)*pow(M2,-1)*ppw->delta_rho*a + (3.*bra + kin)*2.*H*ppw->pvecmetric[ppw->index_mt_vx_prime_smg]*a + (2.*bra*pow(k,2) + (-18. + 15.*bra + 2.*kin)*rho_smg*pow(a,2) + (-18.*DelM2 + 15.*bra*M2 + 2.*kin*M2)*rho_tot*pow(M2,-1)*pow(a,2) + (-2.*DelM2 + bra*M2)*9.*pow(M2,-1)*p_tot*pow(a,2) + 9.*(-2. + bra)*p_smg*pow(a,2))*ppw->pvecmetric[ppw->index_mt_vx_smg])*pow(-2. + bra,-1);
+          if (pba->expansion_model_smg == evolve_Mp) {
+            ppw->pvecmetric[ppw->index_mt_h_prime] =
+              (- 4.*pow(H,-1)*pow(k,2)*y[ppw->pv->index_pt_eta]*pow(a,-1)
+              - 6.*pow(H,-1)*pow(M2,-1)*ppw->delta_rho*a
+              + (3.*bra + kin)*2.*H*ppw->pvecmetric[ppw->index_mt_vx_prime_smg]*a
+              + (
+              2.*bra*pow(k,2)
+              + (-18. + 15.*bra + 2.*kin)*rho_smg*pow(a,2)*pow(M2,-1)
+              + ( + 15.*bra + 2.*kin)*rho_tot*pow(M2,-1)*pow(a,2)
+              + ( + bra)*9.*pow(M2,-1)*p_tot*pow(a,2)
+              + 9.*(-2. + bra)*p_smg*pow(a,2)*pow(M2,-1)
+            )*ppw->pvecmetric[ppw->index_mt_vx_smg])*pow(-2. + bra,-1);
+          }
+          else {
+            ppw->pvecmetric[ppw->index_mt_h_prime] = (- 4.*pow(H,-1)*pow(k,2)*y[ppw->pv->index_pt_eta]*pow(a,-1) - 6.*pow(H,-1)*pow(M2,-1)*ppw->delta_rho*a + (3.*bra + kin)*2.*H*ppw->pvecmetric[ppw->index_mt_vx_prime_smg]*a + (2.*bra*pow(k,2) + (-18. + 15.*bra + 2.*kin)*rho_smg*pow(a,2) + (-18.*DelM2 + 15.*bra*M2 + 2.*kin*M2)*rho_tot*pow(M2,-1)*pow(a,2) + (-2.*DelM2 + bra*M2)*9.*pow(M2,-1)*p_tot*pow(a,2) + 9.*(-2. + bra)*p_smg*pow(a,2))*ppw->pvecmetric[ppw->index_mt_vx_smg])*pow(-2. + bra,-1);
+          }
         }
 
         /* eventually, infer radiation streaming approximation for gamma and ur (this is exactly the right place to do it because the result depends on h_prime) */
@@ -6409,8 +6424,19 @@ int perturb_einstein(
 
 
         /* second equation involving total velocity */
-        ppw->pvecmetric[ppw->index_mt_eta_prime] = 1./2.*bra*H*ppw->pvecmetric[ppw->index_mt_vx_prime_smg]*a + 3./2.*pow(k,-2)*pow(M2,-1)*ppw->rho_plus_p_theta*pow(a,2) + (((-3.) + bra)*1./2.*rho_smg*pow(a,2) + (-3.*DelM2 + bra*M2)*1./2.*rho_tot*pow(M2,-1)*pow(a,2) + DelM2*(-3.)/2.*pow(M2,-1)*p_tot*pow(a,2) + (-3.)/2.*p_smg*pow(a,2))*ppw->pvecmetric[ppw->index_mt_vx_smg];  /* eta' */
-
+        if (pba->expansion_model_smg == evolve_Mp) {
+          ppw->pvecmetric[ppw->index_mt_eta_prime] =
+            1./2.*bra*H*ppw->pvecmetric[ppw->index_mt_vx_prime_smg]*a
+            + 3./2.*pow(k,-2)*pow(M2,-1)*ppw->rho_plus_p_theta*pow(a,2)
+            + (
+              ((-3.) + bra)*1./2.*rho_smg*pow(a,2)*pow(M2,-1)
+              + bra*1./2.*rho_tot*pow(M2,-1)*pow(a,2)
+              + (-3.)/2.*p_smg*pow(a,2)*pow(M2,-1)
+            )*ppw->pvecmetric[ppw->index_mt_vx_smg];  /* eta' */
+        }
+        else {
+          ppw->pvecmetric[ppw->index_mt_eta_prime] = 1./2.*bra*H*ppw->pvecmetric[ppw->index_mt_vx_prime_smg]*a + 3./2.*pow(k,-2)*pow(M2,-1)*ppw->rho_plus_p_theta*pow(a,2) + (((-3.) + bra)*1./2.*rho_smg*pow(a,2) + (-3.*DelM2 + bra*M2)*1./2.*rho_tot*pow(M2,-1)*pow(a,2) + DelM2*(-3.)/2.*pow(M2,-1)*p_tot*pow(a,2) + (-3.)/2.*p_smg*pow(a,2))*ppw->pvecmetric[ppw->index_mt_vx_smg];  /* eta' */
+        }
 
         /* third equation involving total pressure */
         ppw->pvecmetric[ppw->index_mt_h_prime_prime] = 2.*pow(D,-1)*pow(k,2)*l1*y[ppw->pv->index_pt_eta] + 2.*H*pow(D,-1)*l3*ppw->pvecmetric[ppw->index_mt_h_prime]*a + (-9.)*kin*pow(D,-1)*pow(M2,-1)*ppw->delta_p*pow(a,2) + 3.*pow(H,2)*pow(D,-1)*l4*ppw->pvecmetric[ppw->index_mt_vx_prime_smg]*pow(a,2) + (2.*H*pow(D,-1)*pow(k,2)*l5*a + 6.*pow(H,3)*pow(D,-1)*l6*pow(a,3))*ppw->pvecmetric[ppw->index_mt_vx_smg];

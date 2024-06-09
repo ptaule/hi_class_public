@@ -2089,7 +2089,6 @@ int background_solve(
       double H = pvecback[pba->index_bg_H];
       double H2 = H*H;
       double H_p = pvecback[pba->index_bg_H_prime];
-      double H_pp = pvecback[pba->index_bg_H_prime_prime];
 
       double M2 = pvecback[pba->index_bg_M2_smg];
       double kin = pvecback[pba->index_bg_kineticity_smg];
@@ -2107,7 +2106,6 @@ int background_solve(
       double p_tot_p = pvecback_derivs[pba->index_bg_p_tot_wo_smg];
       double p_smg_p = pvecback_derivs[pba->index_bg_p_smg];
       double D = pvecback[pba->index_bg_kinetic_D_smg];
-      double D_p = pvecback_derivs[pba->index_bg_kinetic_D_smg];
 
       pvecback[pba->index_bg_lambda_1_smg] = (run + (-1.)*ten)*(-3.)*bra + (1. + ten)*kin;
 
@@ -2157,10 +2155,8 @@ int background_solve(
               pba->error_message,
               "cannot copy data back to pba->background_table");
 
-      pvecback[pba->index_bg_lambda_6_smg] = ((-3*(-p_smg_p + p_tot_p)*kin)/(2.*a*H2*H*M2)
-        + (pvecback[pba->index_bg_lambda_2_smg]*(1 - (3*bra*H_p)/(a*H2*kin))*kin)/2.
-        - (2*bra_p*kin - bra*kin_p)/(2.*a*H)
-        - (D*H_p*(2 + H_pp/(a*H*H_p) + run))/(a*H2) );
+
+      pvecback[pba->index_bg_lambda_6_smg] = 3./2.*(((9./2.*bra + kin)*dM2*pow(M2,-1) + (-9.)/4.*pow(bra,2) - bra*kin/2. + D*run)*pow(rho_tot,2) + ((9.*bra + kin)*dM2*pow(M2,-1) + (-9.)/2.*pow(bra,2) - bra*kin/2. + D*run)*rho_tot*p_tot + 9./2.*bra*(dM2 - M2*bra/2.)*pow(M2,-1)*pow(p_tot,2) + (kin*dM2*pow(M2,-1) - bra*kin/2. + D*run)*(rho_tot + p_tot)*rho_smg + ((kin - bra*kin/2. + D*run)*rho_smg + ((9.*bra + kin)*(2. - bra)/2. + D*run - 9./2.*bra*pow(M2,-1))*rho_tot + 9.*bra*(1. - bra/2. - pow(M2,-1)/2.)*p_tot)*(rho_smg + p_smg) + 9./2.*bra*(1. - bra/2.)*pow(rho_smg + p_smg,2))*pow(H,-4) + (((9.*bra*(rho_tot + p_tot) - 2.*kin*(rho_tot + rho_smg)) + (rho_smg + p_smg)*9.*bra)*bra_p/2. + (rho_tot + rho_smg)*bra*kin_p + (2.*dM2*kin + 3.*pow(bra,2)*M2)*3./2.*pow(M2,-1)*p_tot_p + 3.*D*p_smg_p)*pow(H,-3)*pow(a,-1)/2.;
 
             memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_lambda_6_smg,
             &pvecback[pba->index_bg_lambda_6_smg],
@@ -2169,7 +2165,8 @@ int background_solve(
               pba->error_message,
               "cannot copy data back to pba->background_table");
 
-      pvecback[pba->index_bg_lambda_7_smg] = (D*pvecback[pba->index_bg_lambda_2_smg])/8. + ((2 - bra)*D*(4 + (2*H_p)/(a*H2) + (3*bra*bra_p + kin_p)/(a*D*H) + run))/8.;
+
+      pvecback[pba->index_bg_lambda_7_smg] = ((-2.) + bra)*(4. + run)*(-1.)/8.*D + ((-2.)*(2. + dM2) + bra*M2)*(rho_tot + p_tot)*3./16.*pow(H,-2)*D*pow(M2,-1) + ((-2.) + bra)*(rho_smg + p_smg)*3./16.*pow(H,-2)*D + (D*bra_p + ((-2.) + bra)*((-3.)*bra*bra_p + (-1.)*kin_p))*1./8.*pow(H,-1)*pow(a,-1);
 
             memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_lambda_7_smg,
             &pvecback[pba->index_bg_lambda_7_smg],
@@ -2179,10 +2176,7 @@ int background_solve(
               "cannot copy data back to pba->background_table");
 
 
-      pvecback[pba->index_bg_lambda_8_smg] = (-1./8.*((D + (3*bra_p)/(a*H) - 3*pvecback[pba->index_bg_lambda_2_smg])*pvecback[pba->index_bg_lambda_2_smg])
-        + ((2 - bra)*((H_p*(-D + 3*pvecback[pba->index_bg_lambda_2_smg]))/(a*H2)
-        - (9*bra*(-p_smg_p + p_tot_p))/(2.*a*H2*H*M2)))/8.
-        - ((2 - bra)*D*(4 + (2*H_p)/(a*H2) + (3*bra*bra_p + kin_p)/(a*D*H) + run))/8.);
+      pvecback[pba->index_bg_lambda_8_smg] = ((-2.) + bra)*(4. + run)*1./8.*D + 3./8.*(rho_tot + p_tot)*(((-9.)*bra + (-2.)*D*(3. + 2.*dM2 - bra*M2))*(-1.)/2. + (-rho_tot*dM2 - (p_smg + rho_smg*M2))*9.*pow(H,-2)*pow(M2,-1))*pow(H,-2)*pow(M2,-1) + ((-2.) + bra)*(rho_smg + p_smg)*(-3.)/8.*pow(H,-2)*D + (-2.*dM2 + bra*M2)*(rho_tot + p_tot)*(p_tot + p_smg)*27./16.*pow(H,-4)*pow(M2,-2) + ((-9.)*(rho_tot + p_tot) + (-6.)*bra*pow(H,2)*M2 + 3.*pow(bra,2)*pow(H,2)*M2 + (-1.)*pow(H,2)*D*M2)*1./8.*pow(H,-3)*pow(M2,-1)*bra_p*pow(a,-1) + ((-2.) + bra)*1./8.*pow(H,-1)*kin_p*pow(a,-1) + ((-2.) + bra)*9./16.*bra*pow(H,-3)*pow(M2,-1)*p_tot_p*pow(a,-1);
 
             memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_lambda_8_smg,
             &pvecback[pba->index_bg_lambda_8_smg],

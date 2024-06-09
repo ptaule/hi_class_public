@@ -6201,7 +6201,7 @@ int perturb_einstein(
   double D=0., cs2num=0., cs2num_p=0.;
   double l1=0., l2=0., l3=0., l4=0., l5=0., l6=0., l7=0., l8=0., l9=0., l10=0., l11=0.;
   double l2_p=0., l8_p=0., l9_p=0., l11_p=0.;
-  double M2=0., DelM2=0., kin=0., bra=0., run=0., ten=0., bra_p=0.;
+  double H_p=0., M2=0., DelM2=0., kin=0., bra=0., run=0., ten=0., bra_p=0.;
   double rho_tot=0., p_tot=0., rho_smg=0., p_smg=0., H=0., rho_r=0.;
   double g1=0., g2=0., g3=0., g4=0., g5=0., g6=0., g7=0., g8=0., g9=0.;
 
@@ -6277,6 +6277,7 @@ int perturb_einstein(
         rho_r = ppw->pvecback[pba->index_bg_rho_g] + ppw->pvecback[pba->index_bg_rho_ur];
 
         H = ppw->pvecback[pba->index_bg_H];
+        H_p = ppw->pvecback[pba->index_bg_H_prime];
 
         l1 = ppw->pvecback[pba->index_bg_lambda_1_smg];
         l2 = ppw->pvecback[pba->index_bg_lambda_2_smg];
@@ -6426,12 +6427,10 @@ int perturb_einstein(
         /* second equation involving total velocity */
         if (pba->expansion_model_smg == evolve_Mp) {
           ppw->pvecmetric[ppw->index_mt_eta_prime] =
-            1./2.*bra*H*ppw->pvecmetric[ppw->index_mt_vx_prime_smg]*a
-            + 3./2.*pow(k,-2)*pow(M2,-1)*ppw->rho_plus_p_theta*pow(a,2)
-            + (
-              ((-3.) + bra)*1./2.*rho_smg*pow(a,2)*pow(M2,-1)
-              + bra*1./2.*rho_tot*pow(M2,-1)*pow(a,2)
-              + (-3.)/2.*p_smg*pow(a,2)*pow(M2,-1)
+            0.5*a*H*bra*ppw->pvecmetric[ppw->index_mt_vx_prime_smg]
+            + 3*a*a/(2*k*k*M2) * ppw->rho_plus_p_theta
+            + ( a* H_p + a*a*H*H*bra/2
+              + 3*a*a/(2*M2) * (rho_tot + p_tot - rho_smg - p_smg)
             )*ppw->pvecmetric[ppw->index_mt_vx_smg];  /* eta' */
         }
         else {

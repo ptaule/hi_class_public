@@ -618,6 +618,8 @@ int background_init(
   double w_fld, dw_over_da, integral_fld;
   int filenum=0;
 
+  gsl_set_error_handler_off();
+
   /** - in verbose mode, provide some information */
   if (pba->background_verbose > 0) {
     printf("Running CLASS version %s\n",_VERSION_);

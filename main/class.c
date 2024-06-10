@@ -2,13 +2,9 @@
  * Julien Lesgourgues, 17.04.2011
  */
 
-#include <gsl/gsl_errno.h>
-
 #include "class.h"
 
 int main(int argc, char **argv) {
-
-  gsl_set_error_handler_off();
 
   struct precision pr;        /* for precision parameters */
   struct background ba;       /* for cosmological background */

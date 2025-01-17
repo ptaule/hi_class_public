@@ -2117,7 +2117,7 @@ int background_solve(
               pba->error_message,
               "cannot copy data back to pba->background_table");
 
-      if (pba->gravity_model_smg == evolve_Mp) {
+      if (pba->expansion_model_smg == evolve_Mp) {
         pvecback[pba->index_bg_lambda_2_smg] = bra*(rho_tot + p_tot)*(-3.)/2.*pow(H,-2)*pow(M2,-1) + ((-2.) + bra)*(rho_smg + p_smg)*(-3.)/2.*pow(H,-2)*pow(M2,-1) + pow(H,-1)*bra_p*pow(a,-1);
       }
       else {

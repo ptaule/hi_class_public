@@ -3817,13 +3817,8 @@ int background_gravity_functions(
 
       double kin = cs2num - 3./2.*pow(bra,2);
 
-      if (fabs(kin) < 1e-25) {
-        if (kin < 0) {
-          kin = -1e-25;
-        }
-        else{
-          kin = 1e-25;
-        }
+      if (fabs(kin) < 1e-15) {
+        kin = 1e-15;
       }
       pvecback[pba->index_bg_kineticity_smg] = kin;
     }

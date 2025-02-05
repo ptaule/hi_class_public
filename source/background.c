@@ -3792,10 +3792,12 @@ int background_gravity_functions(
       double M2 = exp(c_m * pow(a, eta)/eta);
       double dM2 = M2 - 1;
 
-      double H = pvecback[pba->index_bg_H];
+      double H = sqrt(rho_tot-pba->K/a/a);
       double rho_m = pvecback[pba->index_bg_rho_tot_wo_smg];
       double rho_smg = pvecback[pba->index_bg_rho_smg];
       double p_smg = pvecback[pba->index_bg_p_smg];
+      double rho_tot = pvecback[pba->index_bg_rho_tot_wo_smg];
+      double p_tot = pvecback[pba->index_bg_p_tot_wo_smg];
 
       double bra_p = -2 * c_b * eta * pow(a, eta+1) * H;
 
@@ -3807,7 +3809,7 @@ int background_gravity_functions(
 
       double lambda_2 = 0;
       if (pba->expansion_model_smg == evolve_Mp) {
-        lambda_2 = pow(H,-2)*pow(M2,-1) * ( (1 - bra/2.) * (rho_m + rho_smg + p_smg)*(3.) - rho_m*(3.)) + pow(H,-1)*bra_p*pow(a,-1);
+        lambda_2 = bra*(rho_tot + p_tot)*(-3.)/2.*pow(H,-2)*pow(M2,-1) + ((-2.) + bra)*(rho_smg + p_smg)*(-3.)/2.*pow(H,-2)*pow(M2,-1) + pow(H,-1)*bra_p*pow(a,-1);
       }
       else {
         lambda_2 = (- 2.*dM2 + bra*M2)*(rho_tot + p_tot)*(-3.)/2.*pow(H,-2)*pow(M2,-1) + ((-2.) + bra)*(rho_smg + p_smg)*(-3.)/2.*pow(H,-2) + pow(H,-1)*bra_p*pow(a,-1);

@@ -3819,9 +3819,6 @@ int background_gravity_functions(
 
       double kin = cs2num - 3./2.*pow(bra,2);
 
-      if (fabs(kin) < 1e-15) {
-        kin = 1e-15;
-      }
       pvecback[pba->index_bg_kineticity_smg] = kin;
     }
     else if ((pba->gravity_model_smg == eft_gammas_power_law) || (pba->gravity_model_smg == eft_gammas_exponential)) {

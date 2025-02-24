@@ -86,10 +86,10 @@ cdef class Class:
     cdef lensing le
     cdef file_content fc
 
-    cpdef int ready # Flag to see if classy can currently compute
-    cpdef int allocated # Flag to see if classy structs are allocated already
-    cpdef object _pars # Dictionary of the parameters
-    cpdef object ncp   # Keeps track of the structures initialized, in view of cleaning.
+    cdef int ready # Flag to see if classy can currently compute
+    cdef int allocated # Flag to see if classy structs are allocated already
+    cdef object _pars # Dictionary of the parameters
+    cdef object ncp   # Keeps track of the structures initialized, in view of cleaning.
 
     # Defining two new properties to recover, respectively, the parameters used
     # or the age (set after computation). Follow this syntax if you want to
@@ -114,7 +114,7 @@ cdef class Class:
         self.set(**_pars)
 
     def __cinit__(self, default=False):
-        cpdef char* dumc
+        cdef char* dumc
         self.ready = False
         self.allocated = False
         self._pars = {}
@@ -1739,7 +1739,7 @@ cdef class Class:
         try:
             index = int(name.split('_')[-1])
         except:
-            print "Index not given or not an interger: printing the whole array"
+            print("Index not given or not an interger: printing the whole array")
             array = []
             for i in range(carray_size):
                 array.append(carray[i])

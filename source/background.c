@@ -3649,7 +3649,9 @@ int background_gravity_functions(
           4*pow(c_m,2)*(-1 + Omega_const_smg)*exp_ei_res_1.val))/9.
         );
       }
+      /* evolve_Mp only considers rho_smg = -p_smg, w=-1 */
       pvecback[pba->index_bg_p_smg] = -pvecback[pba->index_bg_rho_smg];
+      pvecback[pba->index_bg_w_smg] = -1;
     }
 
     if (pba->expansion_model_smg == wowa){

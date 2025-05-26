@@ -418,6 +418,18 @@ int gravity_models_gravity_properties_smg(
      }
    }
   //end of Galileon
+  if (strcmp(string1,"higher_order_cubic_galileon") == 0) {
+     pba->gravity_model_smg = higher_order_cubic_galileon;
+     pba->field_evolution_smg = _TRUE_;
+     pba->parameters_size_smg = 4;
+     flag2=_TRUE_;
+
+     pba->attractor_ic_smg = _TRUE_;
+
+     class_read_list_of_doubles("parameters_smg",pba->parameters_smg,pba->parameters_size_smg);
+     pba->tuning_index_smg = 1; //use c2 for tuning
+     pba->tuning_dxdy_guess_smg = - 0.017 * pow(pba->parameters_smg[0]/pba->parameters_smg[2], 4);
+  }
 
   if (strcmp(string1,"brans dicke") == 0 || strcmp(string1,"Brans Dicke") == 0 || strcmp(string1,"brans_dicke") == 0) {
     pba->gravity_model_smg = brans_dicke;
@@ -659,6 +671,23 @@ int gravity_models_get_Gs_smg(
     /* pgf->G_5 = Lambda5*pow(X,2) */
     pgf->G5_X = 2.*Lambda5*X;
     pgf->G5_XX = 2.*Lambda5;
+
+  }
+
+  else if(pba->gravity_model_smg == higher_order_cubic_galileon){
+
+    double M3 = pow(pba->H0,2); /* Mpl^2 units */
+
+    double c1 = pba->parameters_smg[0];
+    double c2 = pba->parameters_smg[1];
+    double d1 = pba->parameters_smg[2];
+    double d2 = pba->parameters_smg[3];
+
+    pgf->G2 = c1*X + 0.5*c2*X*X/M3;
+    pgf->G2_X = c1 + c2*X/M3;
+    pgf->G2_XX = c2;
+    pgf->G3_X = d1/M3 + d2*X/M3/M3;
+    pgf->G3_XX = d2/M3/M3;
   }
 
   else if(pba->gravity_model_smg == brans_dicke){
@@ -1087,6 +1116,15 @@ int gravity_models_initial_conditions_smg(
 			//phi is irrelevant
 			pvecback_integration[pba->index_bi_phi_smg] = pba->parameters_smg[6];
 			break;
+    case higher_order_cubic_galileon:
+	    pvecback_integration[pba->index_bi_phi_smg] = 0.0; //shift-symmetric, i.e. this is irrelevant
+
+      double M3 = pow(pba->H0,2);
+      double c1 = pba->parameters_smg[0];
+      double d1 = pba->parameters_smg[2];
+
+			pvecback_integration[pba->index_bi_phi_prime_smg] = - c1/d1/3 * M3 *  a/sqrt(rho_rad);
+      break;
 
     /* BD IC: note that the field value is basically the planck mass,
      * so its initial value should be around 1
@@ -1240,6 +1278,12 @@ int gravity_models_print_stdout_smg(
       printf("Modified gravity: covariant Galileon with parameters: \n");
       printf(" -> c_1 = %g, c_2 = %g, c_3 = %g \n    c_4 = %g, c_5 = %g, xi_ini = %g (xi_end = %g) \n",
 	    pba->parameters_smg[1],pba->parameters_smg[2],pba->parameters_smg[3],pba->parameters_smg[4],pba->parameters_smg[5],pba->parameters_smg[0], pba->xi_0_smg);
+    break;
+
+    case higher_order_cubic_galileon:
+      printf("Modified gravity: higher order cubic Galileon with parameters: \n");
+      printf(" -> c_1 = %g, c_2 = %g, d_1 = %g,  d_2 = %g \n",
+	    pba->parameters_smg[0],pba->parameters_smg[1],pba->parameters_smg[2],pba->parameters_smg[3]);
     break;
 
     case brans_dicke:

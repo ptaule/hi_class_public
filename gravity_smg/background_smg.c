@@ -19,6 +19,7 @@
  */
 
 #include "background_smg.h"
+#include "quintic_root.h"
 
 
 /**
@@ -176,53 +177,118 @@ int background_gravity_functions_smg(
 	}
 	// end of if pba->field_evolution_smg
   else{
-
 		double rho_tot = pvecback[pba->index_bg_rho_tot_wo_smg];
 	  double p_tot = pvecback[pba->index_bg_p_tot_wo_smg];
 
-		/* get background parametrizations. */
-		class_call(gravity_models_get_back_par_smg(pba, a, pvecback, pvecback_B),
- 	    pba->error_message,
- 	    pba->error_message
- 	  );
+    if (pba->gravity_model_smg == higher_order_cubic_galileon) {
+      double c1 = pba->parameters_smg[0];
+      double c2 = pba->parameters_smg[1];
+      double d1 = 1;
+      double d2 = pba->parameters_smg[2];
+      double M3 = pow(pba->H0, 2); /* Mpl^2 units */
 
-		/* add _smg to rho_tot */
-		rho_tot += pvecback[pba->index_bg_rho_smg];
-    p_tot += pvecback[pba->index_bg_p_smg];
+      // Attractor solution at early times (when DE is negligible)
+      double phi_prime = -c1 / d1 / 3 * M3 * a / sqrt(rho_tot);
+      double X = 0.5*pow(phi_prime/a,2);
+      double G2 = c1 * X + 0.5 * c2 * X * X / M3;
+      /* Start computing exact quintic when rho_DE/rho_ext > 1e-3 */
+      if (fabs(G2/rho_tot) > 1e-3) {
+        double a_coeffs[6];
+        a_coeffs[0] = -c1*c1;
+        a_coeffs[1] = -(c1*c2) + 18*rho_tot;
+        a_coeffs[2] = -6.*c1 - c2*c2/4. + 18.*d2*rho_tot;
+        a_coeffs[3] = -3.*c2 - 6.*c1*d2 + 9.*d2*d2*rho_tot/2.;
+        a_coeffs[4] = -3.*c2*d2 - 3.*c1*d2*d2/2.;
+        a_coeffs[5] = -3.*c2*d2*d2/4.;
+        double roots[5][2];
+        rf_solve_quintic(a_coeffs, roots, pba->error_message);
 
-    pvecback[pba->index_bg_H] = sqrt(rho_tot-pba->K/a/a);
-    /** - compute derivative of H with respect to conformal time */
-    pvecback[pba->index_bg_H_prime] = - (3./2.) * (rho_tot + p_tot) * a + pba->K/a;
+        /* Track the first root index chosen */
+        static int real_root_index = -1;
 
-    //add friction term
-    if (pba->hubble_evolution == _TRUE_ && pba->initial_conditions_set_smg == _TRUE_){
-      pvecback[pba->index_bg_H] = exp(pvecback_B[pba->index_bi_logH]);
+        if (real_root_index == -1) {
+          for (int i = 0; i < 5; i++) {
+            /* Check whether solution is real */
+            if (fabs(roots[i][1]) < 1e-8) {
+              /* Check that solution is close to limiting case */
+              double phi_prime_cand = pba->H0 * a * sqrt(2 * roots[i][0]);
+              if (fabs(phi_prime_cand - phi_prime) < 1e-3) {
+                real_root_index = i;
+                phi_prime = phi_prime_cand;
+              }
+            }
+          }
+          class_test(real_root_index == -1,
+                     pba->error_message,
+                     "Quintic solver: no real root found near the limiting solution at a=%g.",
+                     a);
+        }
+        else {
+          class_test(fabs(roots[real_root_index][1]) > 1e-8,
+                     pba->error_message,
+                     "Quintic solver: root index %d became complex at a = %e.",
+                     real_root_index, a);
+          double phi_prime_cand =
+            pba->H0 * a * sqrt(2 * roots[real_root_index][0]);
+        }
+        X = 0.5*pow(phi_prime/a,2);
+        G2 = c1 * X + 0.5 * c2 * X * X / M3;
+      }
+
+      //pvecback[pba->index_bg_rho_smg] = - (G2 - 2.*X*G2_X)/3.; // hi_class expression pvecback[pba->index_bg_rho_smg] = - G2; // Attractor solution
+      pvecback[pba->index_bg_rho_smg] = - G2;
+      pvecback[pba->index_bg_p_smg] = - pvecback[pba->index_bg_rho_smg];
+      // TODO Fix p_smg, use proper expression
+      rho_tot += pvecback[pba->index_bg_rho_smg];
+      p_tot += pvecback[pba->index_bg_p_smg];
+
+      pvecback[pba->index_bg_H] = sqrt(rho_tot-pba->K/a/a);
       /** - compute derivative of H with respect to conformal time */
-      pvecback[pba->index_bg_H_prime] += - a*pba->hubble_friction*(pvecback[pba->index_bg_H]*pvecback[pba->index_bg_H] - rho_tot - pba->K/a/a);
+      pvecback[pba->index_bg_H_prime] = - (3./2.) * (rho_tot + p_tot) * a + pba->K/a;
     }
+    else {
+      /* get background parametrizations. */
+      class_call(gravity_models_get_back_par_smg(pba, a, pvecback, pvecback_B),
+                 pba->error_message,
+                 pba->error_message
+                 );
+      /* add _smg to rho_tot */
+      rho_tot += pvecback[pba->index_bg_rho_smg];
+      p_tot += pvecback[pba->index_bg_p_smg];
 
-    // Compute time derivative of rho_smg
-    if (pba->rho_evolution_smg == _TRUE_){
+      pvecback[pba->index_bg_H] = sqrt(rho_tot-pba->K/a/a);
+      /** - compute derivative of H with respect to conformal time */
+      pvecback[pba->index_bg_H_prime] = - (3./2.) * (rho_tot + p_tot) * a + pba->K/a;
+
+      //add friction term
+      if (pba->hubble_evolution == _TRUE_ && pba->initial_conditions_set_smg == _TRUE_){
+        pvecback[pba->index_bg_H] = exp(pvecback_B[pba->index_bi_logH]);
+        /** - compute derivative of H with respect to conformal time */
+        pvecback[pba->index_bg_H_prime] += - a*pba->hubble_friction*(pvecback[pba->index_bg_H]*pvecback[pba->index_bg_H] - rho_tot - pba->K/a/a);
+      }
+
+      // Compute time derivative of rho_smg
+      if (pba->rho_evolution_smg == _TRUE_){
         pvecback[pba->index_bg_rho_prime_smg] = -3.*a*pvecback[pba->index_bg_H]*(1.+pvecback[pba->index_bg_w_smg])*pvecback[pba->index_bg_rho_smg];
+      }
+
+
+      /* initialize the values to the defaults */
+      pvecback[pba->index_bg_kineticity_smg] = 0;
+      pvecback[pba->index_bg_braiding_smg] = 0.;
+      pvecback[pba->index_bg_tensor_excess_smg] = 0.;
+      pvecback[pba->index_bg_beyond_horndeski_smg] = 0.;
+      pvecback[pba->index_bg_M2_smg] = 1.;
+      pvecback[pba->index_bg_delta_M2_smg] = 0.;
+      pvecback[pba->index_bg_M2_running_smg] = 0.;
+
+      /* get background parametrizations. */
+      class_call(gravity_models_get_alphas_par_smg(pba, a, pvecback, pvecback_B),
+                 pba->error_message,
+                 pba->error_message
+                 );
     }
-
-
-		/* initialize the values to the defaults */
-    pvecback[pba->index_bg_kineticity_smg] = 0;
-    pvecback[pba->index_bg_braiding_smg] = 0.;
-    pvecback[pba->index_bg_tensor_excess_smg] = 0.;
-    pvecback[pba->index_bg_beyond_horndeski_smg] = 0.;
-    pvecback[pba->index_bg_M2_smg] = 1.;
-    pvecback[pba->index_bg_delta_M2_smg] = 0.;
-    pvecback[pba->index_bg_M2_running_smg] = 0.;
-
-		/* get background parametrizations. */
-		class_call(gravity_models_get_alphas_par_smg(pba, a, pvecback, pvecback_B),
- 	    pba->error_message,
- 	    pba->error_message
- 	  );
-
-	}
+  }
 	//end of parameterized mode
 
   // add a value to the kineticity to avoid problems with perturbations in certain models.

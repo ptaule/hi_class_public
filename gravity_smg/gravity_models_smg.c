@@ -420,11 +420,9 @@ int gravity_models_gravity_properties_smg(
   //end of Galileon
   if (strcmp(string1,"higher_order_cubic_galileon") == 0) {
      pba->gravity_model_smg = higher_order_cubic_galileon;
-     pba->field_evolution_smg = _TRUE_;
-     pba->parameters_size_smg = 4;
+     pba->field_evolution_smg = _FALSE_;
+     pba->parameters_size_smg = 3;
      flag2=_TRUE_;
-
-     pba->attractor_ic_smg = _TRUE_;
 
      class_read_list_of_doubles("parameters_smg",pba->parameters_smg,pba->parameters_size_smg);
      pba->tuning_index_smg = 1; //use c2 for tuning
@@ -680,8 +678,8 @@ int gravity_models_get_Gs_smg(
 
     double c1 = pba->parameters_smg[0];
     double c2 = pba->parameters_smg[1];
-    double d1 = pba->parameters_smg[2];
-    double d2 = pba->parameters_smg[3];
+    double d1 = 1;
+    double d2 = pba->parameters_smg[2];
 
     pgf->G2 = c1*X + 0.5*c2*X*X/M3;
     pgf->G2_X = c1 + c2*X/M3;

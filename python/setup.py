@@ -43,6 +43,7 @@ classy_ext = Extension("classy", [os.path.join(classy_folder, "classy.pyx")],
                            libraries=liblist,
                            library_dirs=[root_folder, GCCPATH],
                            #extra_link_args=['-lgomp'],
+                           extra_link_args=['-lgsl', '-lgslcblas', '-lm'],
                            language="c++",
                            extra_compile_args=["-std=c++11"]
                        )

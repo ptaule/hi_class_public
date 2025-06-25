@@ -421,14 +421,15 @@ int gravity_models_gravity_properties_smg(
   if (strcmp(string1,"higher_order_cubic_galileon") == 0) {
      pba->gravity_model_smg = higher_order_cubic_galileon;
      pba->field_evolution_smg = _TRUE_;
-     pba->parameters_size_smg = 4;
+     pba->parameters_size_smg = 3;
      flag2=_TRUE_;
 
      pba->attractor_ic_smg = _TRUE_;
 
      class_read_list_of_doubles("parameters_smg",pba->parameters_smg,pba->parameters_size_smg);
-     pba->tuning_index_smg = 1; //use c2 for tuning
-     pba->tuning_dxdy_guess_smg = - 0.017 * pow(pba->parameters_smg[0]/pba->parameters_smg[2], 4);
+     pba->tuning_index_smg = 0; //use c1 for tuning
+     pba->tuning_dxdy_guess_smg = - 1.0/
+        (3.0 * (pba->Omega0_b + pba->Omega0_cdm));
   }
 
   if (strcmp(string1,"brans dicke") == 0 || strcmp(string1,"Brans Dicke") == 0 || strcmp(string1,"brans_dicke") == 0) {
@@ -680,8 +681,8 @@ int gravity_models_get_Gs_smg(
 
     double c1 = pba->parameters_smg[0];
     double c2 = pba->parameters_smg[1];
-    double d1 = pba->parameters_smg[2];
-    double d2 = pba->parameters_smg[3];
+    double d1 = 1;
+    double d2 = pba->parameters_smg[2];
 
     pgf->G2 = c1*X + 0.5*c2*X*X/M3;
     pgf->G2_X = c1 + c2*X/M3;
@@ -1121,7 +1122,7 @@ int gravity_models_initial_conditions_smg(
 
       double M3 = pow(pba->H0,2);
       double c1 = pba->parameters_smg[0];
-      double d1 = pba->parameters_smg[2];
+      double d1 = 1;
 
 			pvecback_integration[pba->index_bi_phi_prime_smg] = - c1/d1/3 * M3 *  a/sqrt(rho_rad);
       break;
@@ -1282,8 +1283,8 @@ int gravity_models_print_stdout_smg(
 
     case higher_order_cubic_galileon:
       printf("Modified gravity: higher order cubic Galileon with parameters: \n");
-      printf(" -> c_1 = %g, c_2 = %g, d_1 = %g,  d_2 = %g \n",
-	    pba->parameters_smg[0],pba->parameters_smg[1],pba->parameters_smg[2],pba->parameters_smg[3]);
+      printf(" -> c_1 = %g, c_2 = %g, d_1 = 1,  d_2 = %g \n",
+	    pba->parameters_smg[0],pba->parameters_smg[1],pba->parameters_smg[2]);
     break;
 
     case brans_dicke:

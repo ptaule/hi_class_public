@@ -187,11 +187,11 @@ int input_read_parameters_smg(
                errmsg,
                "It is not consistent to evolve delta_phi_smg and choose parametrized models.");
 
-    if (pba->gravity_model_smg != higher_order_cubic_galileon) {
+    if (pba->gravity_model_smg != higher_order_cubic_galileon_quintic) {
       class_call(parser_read_string(pfc,"expansion_model",&string1,&flag1,errmsg),
                  errmsg,
                  errmsg);
-      class_test(flag1 == _FALSE_ && pba->gravity_model_smg != higher_order_cubic_galileon,
+      class_test(flag1 == _FALSE_,
                  errmsg,
                  "expansion_model not read, you should specify one!\n");
 

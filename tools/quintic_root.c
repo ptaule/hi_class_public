@@ -1,3 +1,5 @@
+#include <math.h>
+
 #include <gsl/gsl_complex.h>
 #include <gsl/gsl_complex_math.h>
 #include <gsl/gsl_eigen.h>
@@ -13,7 +15,7 @@ int rf_solve_quintic(const double coeffs[6], double roots[5][2], ErrorMsg errmsg
 
   const double a5 = coeffs[5];
 
-  class_test(a5 == 0.0, errmsg, "Leading coefficient (a5) must not be zero.");
+  class_test(fabs(a5) < _EPSILON_, errmsg, "Leading coefficient (a5) must not be zero.");
 
   // Normalize to monic polynomial
   const double b0 = coeffs[0] / a5;

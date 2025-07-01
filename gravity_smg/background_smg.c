@@ -196,24 +196,34 @@ int background_gravity_functions_smg(
       if (fabs(G2/rho_tot) > 1e-3) {
         double a_coeffs[6];
         a_coeffs[0] = -c1*c1;
-        a_coeffs[1] = -(c1*c2) + 18*rho_tot;
-        a_coeffs[2] = -6.*c1 - c2*c2/4. + 18.*d2*rho_tot;
-        a_coeffs[3] = -3.*c2 - 6.*c1*d2 + 9.*d2*d2*rho_tot/2.;
-        a_coeffs[4] = -3.*c2*d2 - 3.*c1*d2*d2/2.;
-        a_coeffs[5] = -3.*c2*d2*d2/4.;
+        a_coeffs[1] = -(c1*c2) + 18*d1*d1*rho_tot/M3;
+        a_coeffs[2] = -0.25*c2*c2 - 6*c1*d1*d1 + 18*d1*d2*rho_tot/M3;
+        a_coeffs[3] = -3*c2*d1*d1 - 6*c1*d1*d2 + 9*d2*d2*rho_tot/(2.*M3);
+        a_coeffs[4] = -3*c2*d1*d2 - 3*c1*d2*d2/2.;
+        a_coeffs[5] = -3*c2*d2*d2/4.;
+
         double roots[5][2];
-        rf_solve_quintic(a_coeffs, roots, pba->error_message);
+        class_call(rf_solve_quintic(a_coeffs, roots, pba->error_message),
+                   pba->error_message,
+                   pba->error_message
+                   );
 
         /* Track the first root index chosen */
         static int real_root_index = -1;
 
         if (real_root_index == -1) {
+          if (pba->background_verbose > 1) {
+            printf("Using quintic solver for G2 at a = %e, rho_tot/H02 = %e, G2/H02 = %e\n",
+                   a, rho_tot/M3, G2/M3);
+          }
           for (int i = 0; i < 5; i++) {
             /* Check whether solution is real */
             if (fabs(roots[i][1]) < 1e-8) {
               /* Check that solution is close to limiting case */
               double phi_prime_cand = pba->H0 * a * sqrt(2 * roots[i][0]);
-              if (fabs(phi_prime_cand - phi_prime) < 1e-3) {
+              if (fabs((phi_prime_cand - phi_prime)/phi_prime) < 1e-2) {
+                printf("Found real root at index %d: phi_prime_cand = %e, phi_prime = %e\n",
+                       i, phi_prime_cand, phi_prime);
                 real_root_index = i;
                 phi_prime = phi_prime_cand;
               }
@@ -229,15 +239,15 @@ int background_gravity_functions_smg(
                      pba->error_message,
                      "Quintic solver: root index %d became complex at a = %e.",
                      real_root_index, a);
-          double phi_prime_cand =
+          double phi_prime =
             pba->H0 * a * sqrt(2 * roots[real_root_index][0]);
         }
         X = 0.5*pow(phi_prime/a,2);
         G2 = c1 * X + 0.5 * c2 * X * X / M3;
       }
 
-      //pvecback[pba->index_bg_rho_smg] = - (G2 - 2.*X*G2_X)/3.; // hi_class expression pvecback[pba->index_bg_rho_smg] = - G2; // Attractor solution
-      pvecback[pba->index_bg_rho_smg] = - G2;
+      //pvecback[pba->index_bg_rho_smg] = - (G2 - 2.*X*G2_X)/3.;
+      pvecback[pba->index_bg_rho_smg] = - G2/3.;
       pvecback[pba->index_bg_p_smg] = - pvecback[pba->index_bg_rho_smg];
       // TODO Fix p_smg, use proper expression
       rho_tot += pvecback[pba->index_bg_rho_smg];

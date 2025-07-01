@@ -432,7 +432,7 @@ int gravity_models_gravity_properties_smg(
         (3.0 * (pba->Omega0_b + pba->Omega0_cdm));
   }
   if (strcmp(string1,"higher_order_cubic_galileon_quintic") == 0) {
-     pba->gravity_model_smg = higher_order_cubic_galileon;
+     pba->gravity_model_smg = higher_order_cubic_galileon_quintic;
      pba->field_evolution_smg = _FALSE_;
      pba->parameters_size_smg = 3;
      flag2=_TRUE_;

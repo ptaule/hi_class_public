@@ -24,9 +24,8 @@ enum equation_of_state {CLP,EDE};
 enum gravity_model {propto_omega, propto_scale,
     constant_alphas,
     eft_alphas_power_law, eft_gammas_power_law, eft_gammas_exponential,
-    galileon, higher_order_cubic_galileon, nkgb,
-    brans_dicke,
-    quintessence_monomial, quintessence_tracker,
+    galileon, higher_order_cubic_galileon, higher_order_cubic_galileon_quintic,
+    nkgb, brans_dicke, quintessence_monomial, quintessence_tracker,
     alpha_attractor_canonical
 };
 

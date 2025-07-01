@@ -187,18 +187,19 @@ int input_read_parameters_smg(
                errmsg,
                "It is not consistent to evolve delta_phi_smg and choose parametrized models.");
 
-    class_call(parser_read_string(pfc,"expansion_model",&string1,&flag1,errmsg),
-               errmsg,
-               errmsg);
-    class_test(flag1 == _FALSE_,
-                errmsg,
-                "expansion_model not read, you should specify one!\n");
+    if (pba->gravity_model_smg != higher_order_cubic_galileon) {
+      class_call(parser_read_string(pfc,"expansion_model",&string1,&flag1,errmsg),
+                 errmsg,
+                 errmsg);
+      class_test(flag1 == _FALSE_ && pba->gravity_model_smg != higher_order_cubic_galileon,
+                 errmsg,
+                 "expansion_model not read, you should specify one!\n");
 
-    /** Fix flags for each expansion model */
-    class_call(gravity_models_expansion_properties_smg(pfc, pba, string1, errmsg),
-               errmsg,
-               errmsg);
-
+      /** Fix flags for each expansion model */
+      class_call(gravity_models_expansion_properties_smg(pfc, pba, string1, errmsg),
+                 errmsg,
+                 errmsg);
+    }
   }
 
   /** Other generic specifications:

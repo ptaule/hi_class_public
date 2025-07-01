@@ -431,6 +431,17 @@ int gravity_models_gravity_properties_smg(
      pba->tuning_dxdy_guess_smg = - 1.0/
         (3.0 * (pba->Omega0_b + pba->Omega0_cdm));
   }
+  if (strcmp(string1,"higher_order_cubic_galileon_quintic") == 0) {
+     pba->gravity_model_smg = higher_order_cubic_galileon;
+     pba->field_evolution_smg = _FALSE_;
+     pba->parameters_size_smg = 3;
+     flag2=_TRUE_;
+
+     class_read_list_of_doubles("parameters_smg",pba->parameters_smg,pba->parameters_size_smg);
+     pba->tuning_index_smg = 0; //use c1 for tuning
+     pba->tuning_dxdy_guess_smg = - 1.0/
+        (3.0 * (pba->Omega0_b + pba->Omega0_cdm));
+  }
 
   if (strcmp(string1,"brans dicke") == 0 || strcmp(string1,"Brans Dicke") == 0 || strcmp(string1,"brans_dicke") == 0) {
     pba->gravity_model_smg = brans_dicke;
@@ -675,7 +686,10 @@ int gravity_models_get_Gs_smg(
 
   }
 
-  else if(pba->gravity_model_smg == higher_order_cubic_galileon){
+  else if(
+        pba->gravity_model_smg == higher_order_cubic_galileon ||
+        pba->gravity_model_smg == higher_order_cubic_galileon_quintic
+    ){
 
     double M3 = pow(pba->H0,2); /* Mpl^2 units */
 
@@ -1118,11 +1132,12 @@ int gravity_models_initial_conditions_smg(
 			pvecback_integration[pba->index_bi_phi_smg] = pba->parameters_smg[6];
 			break;
     case higher_order_cubic_galileon:
+    case higher_order_cubic_galileon_quintic:
 	    pvecback_integration[pba->index_bi_phi_smg] = 0.0; //shift-symmetric, i.e. this is irrelevant
 
-      double M3 = pow(pba->H0,2);
-      double c1 = pba->parameters_smg[0];
-      double d1 = 1;
+            double M3 = pow(pba->H0,2);
+            double c1 = pba->parameters_smg[0];
+            double d1 = 1;
 
 			pvecback_integration[pba->index_bi_phi_prime_smg] = - c1/d1/3 * M3 *  a/sqrt(rho_rad);
       break;

@@ -190,8 +190,10 @@ int background_gravity_functions_smg(
 
       // Attractor solution at early times (when DE is negligible)
       double phi_prime = -c1 / d1 / 3 * M3 * a / sqrt(rho_tot);
+      static double phi_prime_prev = 0;
       double X = 0.5*pow(phi_prime/a,2);
       double G2 = c1 * X + 0.5 * c2 * X * X / M3;
+      double G2_X = c1 + c2 * X / M3;
       /* Start computing exact quintic when rho_DE/rho_ext > 1e-3 */
       if (fabs(G2/rho_tot) > 1e-3) {
         double a_coeffs[6];
@@ -239,21 +241,33 @@ int background_gravity_functions_smg(
                      pba->error_message,
                      "Quintic solver: root index %d became complex at a = %e.",
                      real_root_index, a);
-          double phi_prime =
-            pba->H0 * a * sqrt(2 * roots[real_root_index][0]);
+          phi_prime = pba->H0 * a * sqrt(2 * roots[real_root_index][0]);
         }
         X = 0.5*pow(phi_prime/a,2);
         G2 = c1 * X + 0.5 * c2 * X * X / M3;
+        G2_X = c1 + c2 * X / M3;
       }
 
       //pvecback[pba->index_bg_rho_smg] = - (G2 - 2.*X*G2_X)/3.;
       pvecback[pba->index_bg_rho_smg] = - G2/3.;
-      pvecback[pba->index_bg_p_smg] = - pvecback[pba->index_bg_rho_smg];
-      // TODO Fix p_smg, use proper expression
       rho_tot += pvecback[pba->index_bg_rho_smg];
+
+      double H = sqrt(rho_tot - pba->K/a/a);
+      pvecback[pba->index_bg_H] = H;
+
+      /* Compute phi derivative w.r.t. ln(a), used for pressure */
+      /* TODO: remove constants here.... Hacky solution: log(a_today) = 0, log(a_ini) = 1e-14 */
+      double delta_loga = -3.223619e+01/(40000.0-1.0);
+      /* d2/dt2 (phi) / H = 1/a (d phi')/d(lna) - phi'/a */
+      double phi_dot_dot_over_H = 1/a * ((phi_prime - phi_prime_prev) / delta_loga - phi_prime);
+      /* Update phi_prime_prev with "previous" value */
+      phi_prime_prev = phi_prime;
+
+      /* P = K + 0.33 d2/dt2 (phi) / H phi_dot K_X */
+      pvecback[pba->index_bg_p_smg] = - (G2 + 1./3.*phi_dot_dot_over_H * phi_prime/a * G2_X)/3.;
+      pvecback[pba->index_bg_p_smg] = (G2)/3.;
       p_tot += pvecback[pba->index_bg_p_smg];
 
-      pvecback[pba->index_bg_H] = sqrt(rho_tot-pba->K/a/a);
       /** - compute derivative of H with respect to conformal time */
       pvecback[pba->index_bg_H_prime] = - (3./2.) * (rho_tot + p_tot) * a + pba->K/a;
     }

@@ -1297,6 +1297,7 @@ int gravity_models_print_stdout_smg(
     break;
 
     case higher_order_cubic_galileon:
+    case higher_order_cubic_galileon_quintic:
       printf("Modified gravity: higher order cubic Galileon with parameters: \n");
       printf(" -> c_1 = %g, c_2 = %g, d_1 = 1,  d_2 = %g \n",
 	    pba->parameters_smg[0],pba->parameters_smg[1],pba->parameters_smg[2]);

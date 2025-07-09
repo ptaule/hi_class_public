@@ -256,16 +256,18 @@ int background_gravity_functions_smg(
       pvecback[pba->index_bg_H] = H;
 
       /* Compute phi derivative w.r.t. ln(a), used for pressure */
-      /* TODO: remove constants here.... Hacky solution: log(a_today) = 0, log(a_ini) = 1e-14 */
-      double delta_loga = -3.223619e+01/(40000.0-1.0);
+      /* TODO: remove constants here.... Hacky solution: log(a_today) = 0, log(a_ini) = log(1e-14) */
+      double delta_loga = 3.223619e+01/(40000.0-1.0);
+      double dphi_prime_dlna = (3.0*phi_prime - 4.0*phi_prime_prev1 + phi_prime_prev2) / (2.0 * delta_loga);
       /* d2/dt2 (phi) / H = 1/a (d phi')/d(lna) - phi'/a */
-      double phi_dot_dot_over_H = 1/a * ((phi_prime - phi_prime_prev) / delta_loga - phi_prime);
-      /* Update phi_prime_prev with "previous" value */
-      phi_prime_prev = phi_prime;
+      double phi_dot_dot_over_H = (dphi_prime_dlna - phi_prime) / a;
+      /* Update phi_prime_prev with "previous" values */
+      phi_prime_prev2 = phi_prime_prev1;
+      phi_prime_prev1 = phi_prime;
 
       /* P = K + 0.33 d2/dt2 (phi) / H phi_dot K_X */
-      pvecback[pba->index_bg_p_smg] = - (G2 + 1./3.*phi_dot_dot_over_H * phi_prime/a * G2_X)/3.;
-      pvecback[pba->index_bg_p_smg] = (G2)/3.;
+      pvecback[pba->index_bg_p_smg] = (G2 + 1./3.*phi_dot_dot_over_H * phi_prime/a * G2_X)/3.;
+      // pvecback[pba->index_bg_p_smg] = (G2)/3.;
       p_tot += pvecback[pba->index_bg_p_smg];
 
       /** - compute derivative of H with respect to conformal time */

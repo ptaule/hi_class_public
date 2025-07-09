@@ -190,12 +190,18 @@ int background_gravity_functions_smg(
 
       // Attractor solution at early times (when DE is negligible)
       double phi_prime = -c1 / d1 / 3 * M3 * a / sqrt(rho_tot);
-      static double phi_prime_prev = 0;
+      static double phi_prime_prev1 = 0;
+      static double phi_prime_prev2 = 0;
       double X = 0.5*pow(phi_prime/a,2);
       double G2 = c1 * X + 0.5 * c2 * X * X / M3;
       double G2_X = c1 + c2 * X / M3;
+
+      // if (fabs(a - 1.000115e-02) < 1e-6) {
+      //   printf("Attractor solution at a = %e, rhotot/M3 = %e, H02 = %e, X/H02 = %e,\n",
+      //          a, rho_tot/M3, M3, X/M3);
+      // }
       /* Start computing exact quintic when rho_DE/rho_ext > 1e-3 */
-      if (fabs(G2/rho_tot) > 1e-3) {
+      if (fabs(G2/rho_tot) > 1e-4) {
         double a_coeffs[6];
         a_coeffs[0] = -c1*c1;
         a_coeffs[1] = -(c1*c2) + 18*d1*d1*rho_tot/M3;
@@ -250,28 +256,42 @@ int background_gravity_functions_smg(
 
       //pvecback[pba->index_bg_rho_smg] = - (G2 - 2.*X*G2_X)/3.;
       pvecback[pba->index_bg_rho_smg] = - G2/3.;
-      rho_tot += pvecback[pba->index_bg_rho_smg];
 
-      double H = sqrt(rho_tot - pba->K/a/a);
-      pvecback[pba->index_bg_H] = H;
+      double H = pvecback[pba->index_bg_H];
+      double P0 =  2./3.*X*G3_X/a;
+      double P1 = - 2./3.;
+      double P2 = - 1./3.*a*(3.*(rho_tot + p_tot) + 2.*X*G2_X + 8.*X*G3_X*H*phi_prime/a);
+      double R0 = 1./3.*((G2_X + 2.*X*(G2_XX))/a/H + 6.*(G3_X + X*(G3_XX))*pow(a,-2)*phi_prime);
+      double R1 = 2.*X*G3_X/H;
+      double R2 = 1./3.*(2.*(G2_X - X*G2_XX)*phi_prime - 2.*(-3.*X*G3_X + 6.*pow(X,2)*G3_XX)*a*H);
 
       /* Compute phi derivative w.r.t. ln(a), used for pressure */
       /* TODO: remove constants here.... Hacky solution: log(a_today) = 0, log(a_ini) = log(1e-14) */
-      double delta_loga = 3.223619e+01/(40000.0-1.0);
-      double dphi_prime_dlna = (3.0*phi_prime - 4.0*phi_prime_prev1 + phi_prime_prev2) / (2.0 * delta_loga);
-      /* d2/dt2 (phi) / H = 1/a (d phi')/d(lna) - phi'/a */
-      double phi_dot_dot_over_H = (dphi_prime_dlna - phi_prime) / a;
-      /* Update phi_prime_prev with "previous" values */
-      phi_prime_prev2 = phi_prime_prev1;
-      phi_prime_prev1 = phi_prime;
+      double phi_prime_prime = (P1*R2 - R1*P2)/(P0*R1 - P1*R0);
+
+      // if (fabs(a - 1.000115e-02) < 1e-6) {
+      //   printf("Attractor solution at a = %e, phi_dot_dot_over_H * 2/(phi_prime/a) = %e\n",
+      //          a, phi_dot_dot_over_H * 2.0/(phi_prime/a ));
+      //   printf("Attractor solution at a = %e, phi_dot_dot_over_H / H0 = %e\n",
+      //          a, phi_dot_dot_over_H/pow(pba->H0,1));
+      // }
 
       /* P = K + 0.33 d2/dt2 (phi) / H phi_dot K_X */
-      pvecback[pba->index_bg_p_smg] = (G2 + 1./3.*phi_dot_dot_over_H * phi_prime/a * G2_X)/3.;
+      pvecback[pba->index_bg_p_smg] = (G2 + 1./3.* phi_dot_dot_over_H * phi_prime/a * G2_X)/3.;
       // pvecback[pba->index_bg_p_smg] = (G2)/3.;
       p_tot += pvecback[pba->index_bg_p_smg];
+      rho_tot += pvecback[pba->index_bg_rho_smg];
+      pvecback[pba->index_bg_H] = sqrt(rho_tot - pba->K/a/a);
 
       /** - compute derivative of H with respect to conformal time */
       pvecback[pba->index_bg_H_prime] = - (3./2.) * (rho_tot + p_tot) * a + pba->K/a;
+
+      if (fabs(a - 1.000115e-02) < 1e-6) {
+        printf("a = %e, rho/H02 = %e\n", a, 3*pvecback[pba->index_bg_rho_smg]/M3);
+        printf("a = %e, p/H02 = %e\n", a, 3*pvecback[pba->index_bg_p_smg]/M3);
+        printf("a = %e, w = %e\n", a, pvecback[pba->index_bg_p_smg] / pvecback[pba->index_bg_rho_smg]);
+      }
+
     }
     else {
 

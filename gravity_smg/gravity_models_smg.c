@@ -1359,7 +1359,8 @@ int gravity_models_print_stdout_smg(
       printf("Modified gravity: output not implemented in gravity_models_print_stdout_smg() \n");
   }
 
-  if(pba->field_evolution_smg==_FALSE_) {
+  if(pba->field_evolution_smg==_FALSE_ ||
+    pba->gravity_model_smg != higher_order_cubic_galileon_quintic) {
     switch (pba->expansion_model_smg) {
 
       case lcdm:

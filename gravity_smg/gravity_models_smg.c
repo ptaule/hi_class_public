@@ -1,5 +1,8 @@
 #include "gravity_models_smg.h"
 
+#include <gsl/gsl_spline.h>
+#include <gsl/gsl_interp.h>
+
 
 /**
 * Fix gravity_model properties.
@@ -98,6 +101,15 @@ int gravity_models_gravity_properties_smg(
      pba->parameters_2_size_smg = 8;
      class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
    }
+  if (strcmp(string1,"generalized_galileon") == 0) {
+    pba->gravity_model_smg = generalized_galileon;
+    pba->field_evolution_smg = _FALSE_;
+    pba->M2_evolution_smg = _FALSE_;
+    pba->hubble_evolution = _FALSE_;
+    flag2=_TRUE_;
+    pba->parameters_2_size_smg = 1;
+    class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
+  }
 
   if (strncmp("quintessence", string1, strlen("quintessence")) == 0) {
      // Check if gravity_model has quintessence as prefix.
@@ -540,6 +552,14 @@ int gravity_models_expansion_properties_smg(
     class_read_list_of_doubles("expansion_smg",pba->parameters_smg,pba->parameters_size_smg);
   }
 
+  if (strcmp(string1,"generalized_galileon") == 0) {
+    pba->expansion_model_smg = generalized_galileon_bg;
+    flag2=_TRUE_;
+    pba->parameters_size_smg = 1;
+    pba->rho_evolution_smg=_FALSE_;
+    class_read_list_of_doubles("expansion_smg",pba->parameters_smg,pba->parameters_size_smg);
+  }
+
   if (strcmp(string1,"wede") == 0) {
     //ILSWEDE
     pba->expansion_model_smg = wede;
@@ -799,6 +819,10 @@ int gravity_models_get_back_par_smg(
 // 	printf("a = %e, w = %f, Om_de = %e, rho_de/rho_t = %e \n",a,w,Om,
 // 	       pvecback[pba->index_bg_rho_smg]/(pvecback[pba->index_bg_rho_smg]+rho_tot));
   }
+  else if (pba->expansion_model_smg == generalized_galileon_bg){
+    pvecback[pba->index_bg_rho_smg] = gsl_spline_eval(pba->s_rho_smg, a, pba->s_acc) / 3.;
+    pvecback[pba->index_bg_p_smg] = gsl_spline_eval(pba->s_p_smg, a, pba->s_acc) / 3.;
+  }
 
   return _SUCCESS_;
 }
@@ -940,6 +964,28 @@ int gravity_models_get_alphas_par_smg(
     pvecback[pba->index_bg_delta_M2_smg] = delta_M2; //M2-1
     pvecback[pba->index_bg_M2_smg] = 1.+delta_M2;
 
+  }
+  else if (pba->gravity_model_smg == generalized_galileon) {
+    double A = pba->parameters_2_smg[0];
+    double B = pba->parameters_smg[0];
+
+    double S = 1/(1 + Omega_smg + B*Omega_smg);
+
+    double H = pvecback[pba->index_bg_H];
+    double bra = 2 * Omega_smg * (1 - A/H * pba->H0);
+
+    pvecback[pba->index_bg_braiding_smg] = bra;
+
+    if (Omega_smg < 1e-6) {
+      pvecback[pba->index_bg_kineticity_smg] = 6 * Omega_smg;
+    }
+    else {
+      pvecback[pba->index_bg_kineticity_smg] = 3.0 / 2.0 * bra*bra*(1/(Omega_smg * S) - 1);
+    }
+    pvecback[pba->index_bg_tensor_excess_smg] = 0.0;
+    pvecback[pba->index_bg_M2_running_smg] = 0.0;
+    pvecback[pba->index_bg_delta_M2_smg] = 0.0; //M2-1
+    pvecback[pba->index_bg_M2_smg] = 1.;
   }
 
   return _SUCCESS_;
@@ -1294,6 +1340,11 @@ int gravity_models_print_stdout_smg(
 	      pba->parameters_2_smg[0],pba->parameters_2_smg[1],pba->parameters_2_smg[2],pba->parameters_2_smg[3],pba->parameters_2_smg[4],pba->parameters_2_smg[5],pba->parameters_2_smg[6],pba->parameters_2_smg[7]);
     break;
 
+    case generalized_galileon:
+      printf("Modified gravity: generalized_galileon with parameters: \n");
+      printf(" -> A = %g, \n", pba->parameters_2_smg[0]);
+    break;
+
     default:
       printf("Modified gravity: output not implemented in gravity_models_print_stdout_smg() \n");
   }
@@ -1321,6 +1372,11 @@ int gravity_models_print_stdout_smg(
       case wede:    //ILSWEDE
         printf("Parameterized model with variable EoS + Early DE \n");
         printf("-> Omega_smg = %f, w = %f, Omega_e = %f \n",pba->parameters_smg[0],pba->parameters_smg[1],pba->parameters_smg[2]);
+      break;
+
+      case generalized_galileon_bg:
+        printf("Generalized galileon background with\n");
+        printf("-> B = %f\n",pba->parameters_smg[0]);
       break;
 
       default:

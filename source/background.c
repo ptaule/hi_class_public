@@ -845,6 +845,14 @@ int background_init(
     printf("Computing background\n");
   }
 
+  /* Solve generalized galileon background in separate module, and store the resulting rhoDE and pDE */
+  if (pba->expansion_model_smg == generalized_galileon_bg) {
+    class_call(
+      gen_gal_build_background(pba),
+      pba->error_message,
+      pba->error_message);
+  }
+
   /** - if shooting failed during input, catch the error here */
   class_test(pba->shooting_failed == _TRUE_,
              pba->error_message,

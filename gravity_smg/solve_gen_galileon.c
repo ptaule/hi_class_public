@@ -11,11 +11,12 @@
 
 #include <stdlib.h>
 #include <math.h>
-#include <gsl/gsl_errno.h>
 #include <gsl/gsl_odeiv2.h>
+#include <gsl/gsl_errno.h>
 #include <gsl/gsl_spline.h>
 #include <gsl/gsl_interp.h>
 
+#include "solve_gen_galileon.h"
 
 struct gen_gal_params {
   double Om0;   /* Omega_m0 driving the RHS */
@@ -23,18 +24,38 @@ struct gen_gal_params {
   double B;     /* model parameter */
 };
 
-/* ODE RHS: dy/du = f(u,y) with u = -ln a */
+/* More stable version ? */
+/* ODE RHS: dy/du = f(u,y) with u = -ln a, y[0] = E(a) */
 static int rhs(double u, const double y[], double dydu[], void *params) {
   const struct gen_gal_params *P = (const struct gen_gal_params*) params;
-  const double Om   = P->Om0 * exp(3. * u) / (y[0]*y[0]);
-  const double Or   = P->Or0 * exp(4. * u) / (y[0]*y[0]);
+  const double E = y[0];
+  if (!isfinite(E) || E <= 0.0) return GSL_EFAILED;
+
+  const double invE2 = 1.0 / (E*E);
+  const double Om = P->Om0 * exp(3.0 * u) * invE2;   /* Ωm(a) */
+  const double Or = P->Or0 * exp(4.0 * u) * invE2;   /* Ωr(a) */
   const double Oext = Om + Or;
-  const double O_smg = 1 - Oext;
-  const double S    = 1.0 / (1.0 + (1.0 + P->B) * O_smg);
-  const double fac  = 1.0 - O_smg * S;
-  dydu[0] = 1.5 * y[0] * Oext * fac;
+
+  double num = 1.0 + P->B - P->B * Oext;
+  double den = 2.0 + P->B - (1.0 + P->B) * Oext;
+
+  /* Guard the RD/MD limit and pathological roundoff */
+  double fac;
+  if (!isfinite(num) || !isfinite(den) || den <= 0.0) {
+    fac = 1.0;
+  } else {
+    fac = num / den;
+    /* In RD/MD, Oext → 1 ⇒ fac → 1. Snap very close to 1 to kill noise. */
+    if (Oext > 1.0 - 1e-14) fac = 1.0;
+    /* Keep fac in a sane range */
+    if (fac > 1.0) fac = 1.0;
+    if (fac < 0.0) fac = 0.0;
+  }
+
+  dydu[0] = 1.5 * E * (Om + (4.0/3.0) * Or) * fac;
   return GSL_SUCCESS;
 }
+
 
 /* Simple guard against negative/NaN y during integration */
 static int check_state(double y) {
@@ -52,22 +73,18 @@ static void reverse_double(double *arr, size_t n) {
 }
 
 /* Build background table and splines */
-int gen_gal_build_background(double H0,
-                         double Omega_m0,
-                         double Omega_r0,
-                         double B,
-                         gsl_interp_accel *s_acc,
-                         gsl_spline *s_rho_smg,
-                         gsl_spline *s_p_smg
-                         )
+int gen_gal_build_background(struct background * pba)
 {
+  const double H0       = pba->H0;
+  const double Omega_m0 = pba->Omega0_b + pba->Omega0_cdm;
+  const double Omega_r0 = pba->Omega0_g + pba->Omega0_ur;
+  const double B        = pba->parameters_smg[0];
+
   const double a_min = 1e-14; /* early-time limit */
   const size_t n_pts = 10000;
   const double rtol  = 1e-9;
-  const double atol  = 1e-12;
-
-  if (!(a_min > 0.0 && a_min < 1.0)) return GSL_EINVAL;
-  if (n_pts < 5) return GSL_EINVAL;
+  const double atol  = 1e-10;
+  const double Omega_smg_match_th = 1e-4;  /* matching threshold */
 
   int status = GSL_SUCCESS;
 
@@ -88,11 +105,15 @@ int gen_gal_build_background(double H0,
      We'll store temporary arrays in descending a, then reverse for splines. */
   const double u0 = 0.0;
   const double u1 = -log(a_min);
-  const double du = (u1 - u0) / (double)(n_pts - 1); /* note: negative */
+  const double du = (u1 - u0) / (double)(n_pts - 1);
 
   double u = u0;
   double y[1];
   y[0] = 1.0;  /* E(a=1)=1 */
+
+  /* Asymptotic matching state, using rho_smg ~ 1/H^2 */
+  int use_asymp = 0;
+  double C4 = 0.0; /* C4 = Omega_smg(a_match) * E(a_match)^4 */
 
   for (size_t i = 0; i < n_pts; ++i) {
     const double a = exp(-u);
@@ -100,17 +121,40 @@ int gen_gal_build_background(double H0,
     a_arr[i]    = a;
     const double E = y[0];
 
-    const double Om    = Omega_m0 * pow(a,-3) / (E*E);
-    const double Or    = Omega_r0 * pow(a,-4) / (E*E);
-    const double Oext = Om + Or;
-
-    rho_smg_arr[i] = 3 * H0*H0*E*E * (1 - Oext);
-    if (rho_smg_arr[i] < 0) {
-      rho_smg_arr[i] = 0;
+    double dEdu_over_E;
+    {
+      double dy_temp[1];
+      rhs(u,&E,dy_temp,&P);
+      dEdu_over_E = dy_temp[0] / E;
     }
 
-    const double S = 1.0 / (1.0 + (1.0 + B) * (1 - Oext));
-    p_smg_arr[i] = - rho_smg_arr[i] * (1 + S * Oext);
+    const double Om    = Omega_m0 * pow(a,-3) / (E*E);
+    const double Or    = Omega_r0 * pow(a,-4) / (E*E);
+
+    const double denom = 1.5 * (Om + 4.0/3.0 * Or);
+    double fac = dEdu_over_E / denom;
+
+    const double Oext = Om + Or;
+    if (Oext > 1.0 - 1e-14) fac = 1.0;
+    if (fac < 0.0) fac = 0.0;
+    if (fac > 1.0) fac = 1.0;
+
+    double Omega_smg = (1.0 - fac) / (fac * (1.0 + B) - B);
+    /* Clamp true negatives: */
+    if (Oext > 1.0 - 1e-12 && Omega_smg < 0.0) Omega_smg = 0.0;
+
+    /* Early-time asymptotic match: Ω_smg(a) = C4 / E(a)^4 once threshold crossed */
+    if (!use_asymp && Omega_smg < Omega_smg_match_th) {
+      use_asymp = 1;
+      C4 = Omega_smg * E*E*E*E;  /* freeze C4 at the match point */
+    }
+
+    Omega_smg = use_asymp ? (C4 / (E*E*E*E)) : Omega_smg;
+
+    rho_smg_arr[i] = 3.0 * H0*H0 * E*E * Omega_smg;
+
+    const double S = 1.0 / (1.0 + (1.0 + B) * Omega_smg);
+    p_smg_arr[i] = - rho_smg_arr[i] * (1.0 + S * (Om + 4.0/3.0 * Or));
 
     if (i + 1 < n_pts) {
       const double u_next = u0 + (double)(i + 1) * du;
@@ -129,13 +173,13 @@ int gen_gal_build_background(double H0,
   reverse_double(p_smg_arr, n_pts);
 
   /* Build splines on 'a' */
-  s_acc   = gsl_interp_accel_alloc();
-  s_rho_smg = gsl_spline_alloc(gsl_interp_cspline, n_pts);
-  s_p_smg = gsl_spline_alloc(gsl_interp_cspline, n_pts);
-  if (!s_acc || s_rho_smg || s_p_smg) { status = GSL_ENOMEM; goto fail; }
+  pba->s_acc   = gsl_interp_accel_alloc();
+  pba->s_rho_smg = gsl_spline_alloc(gsl_interp_steffen, n_pts);
+  pba->s_p_smg = gsl_spline_alloc(gsl_interp_steffen, n_pts);
+  if (!pba->s_acc || !pba->s_rho_smg || !pba->s_p_smg) { status = GSL_ENOMEM; goto fail; }
 
-  if ((status = gsl_spline_init(s_rho_smg, a_arr, rho_smg_arr, n_pts)) != GSL_SUCCESS) goto fail;
-  if ((status = gsl_spline_init(s_p_smg, a_arr, p_smg_arr, n_pts)) != GSL_SUCCESS) goto fail;
+  if ((status = gsl_spline_init(pba->s_rho_smg, a_arr, rho_smg_arr, n_pts)) != GSL_SUCCESS) goto fail;
+  if ((status = gsl_spline_init(pba->s_p_smg, a_arr, p_smg_arr, n_pts)) != GSL_SUCCESS) goto fail;
 
   free(a_arr);
   free(rho_smg_arr);
@@ -144,8 +188,12 @@ int gen_gal_build_background(double H0,
   return GSL_SUCCESS;
 
 fail:
-  if (s_rho_smg) gsl_spline_free(s_rho_smg);
-  if (s_p_smg) gsl_spline_free(s_p_smg);
-  if (s_acc)    gsl_interp_accel_free(s_acc);
+  if (pba->s_rho_smg) gsl_spline_free(pba->s_rho_smg);
+  if (pba->s_p_smg) gsl_spline_free(pba->s_p_smg);
+  if (pba->s_acc)    gsl_interp_accel_free(pba->s_acc);
+  class_test(_FALSE_,
+             pba->error_message,
+             "Something went wrong in gen_gal_build_background: %d", status
+             );
   return status;
 }

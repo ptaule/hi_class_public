@@ -3,6 +3,9 @@
 #ifndef __BACKGROUND__
 #define __BACKGROUND__
 
+#include <gsl/gsl_spline.h>
+#include <gsl/gsl_interp.h>
+
 #include "common.h"
 #include "quadrature.h"
 #include "growTable.h"
@@ -166,6 +169,10 @@ struct background
   double xi_0_smg; /** < final value of xi = phi' H/(aH_0^2)  */
   double phi_0_smg; /** < final value of phi  */
   double M2_0_smg; /** < final value of M_*^2  */
+
+  gsl_interp_accel *s_acc;
+  gsl_spline *s_rho_smg;
+  gsl_spline *s_p_smg;
 
   double cs2_safe_smg; /**< threshold for the speed of sound to consider it negative */
   double D_safe_smg; /* threshold to consider the kinetic term of scalars negative in the stability check */

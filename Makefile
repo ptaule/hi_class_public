@@ -101,7 +101,7 @@ vpath %.c $(HI_CLASS_PATH)
 CCFLAG += -DHI_CLASS_PATH
 #LDFLAGS += -DHI_CLASS_PATH
 INCLUDES += -I../gravity_smg/include
-EXTERNAL += input_smg.o background_smg.o perturbations_smg.o fourier_smg.o gravity_functions_smg.o gravity_models_smg.o
+EXTERNAL += input_smg.o background_smg.o perturbations_smg.o fourier_smg.o gravity_functions_smg.o gravity_models_smg.o solve_gen_galileon.o
 endif
 
 %.o:  %.c .base $(HEADERFILES)
@@ -175,7 +175,7 @@ libclass.a: $(TOOLS) $(SOURCE) $(EXTERNAL)
 	$(AR)  $@ $(addprefix build/, $(TOOLS) $(SOURCE) $(EXTERNAL))
 
 class: $(TOOLS) $(SOURCE) $(EXTERNAL) $(OUTPUT) $(CLASS)
-	$(CPP) $(OPTFLAG) $(OMPFLAG) $(LDFLAG) -o class $(addprefix build/,$(notdir $^)) -lm
+	$(CPP) $(OPTFLAG) $(OMPFLAG) $(LDFLAG) -o class $(addprefix build/,$(notdir $^)) -lgslcblas -lgsl -lm
 
 test_loops: $(TOOLS) $(SOURCE) $(EXTERNAL) $(OUTPUT) $(TEST_LOOPS)
 	$(CPP) $(OPTFLAG) $(OMPFLAG) $(LDFLAG) -o $@ $(addprefix build/,$(notdir $^)) -lm

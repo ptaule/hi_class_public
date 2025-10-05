@@ -21,7 +21,7 @@
 struct gen_gal_params {
   double Om0;   /* Omega_m0 driving the RHS */
   double Or0;   /* Omega_m0 driving the RHS */
-  double B;     /* model parameter */
+  double A;     /* model parameter */
 };
 
 /* More stable version ? */
@@ -36,21 +36,7 @@ static int rhs(double u, const double y[], double dydu[], void *params) {
   const double Or = P->Or0 * exp(4.0 * u) * invE2;   /* Ωr(a) */
   const double Oext = Om + Or;
 
-  double num = 1.0 + P->B - P->B * Oext;
-  double den = 2.0 + P->B - (1.0 + P->B) * Oext;
-
-  /* Guard the RD/MD limit and pathological roundoff */
-  double fac;
-  if (!isfinite(num) || !isfinite(den) || den <= 0.0) {
-    fac = 1.0;
-  } else {
-    fac = num / den;
-    /* In RD/MD, Oext → 1 ⇒ fac → 1. Snap very close to 1 to kill noise. */
-    if (Oext > 1.0 - 1e-14) fac = 1.0;
-    /* Keep fac in a sane range */
-    if (fac > 1.0) fac = 1.0;
-    if (fac < 0.0) fac = 0.0;
-  }
+  double fac = 1.0 / (1.0 + (1 - Oext) * pow(1 + P->A/E, 2));
 
   dydu[0] = 1.5 * E * (Om + (4.0/3.0) * Or) * fac;
   return GSL_SUCCESS;
@@ -78,7 +64,7 @@ int gen_gal_build_background(struct background * pba)
   const double H0       = pba->H0;
   const double Omega_m0 = pba->Omega0_b + pba->Omega0_cdm;
   const double Omega_r0 = pba->Omega0_g + pba->Omega0_ur;
-  const double B        = pba->parameters_smg[0];
+  const double A        = pba->parameters_2_smg[0];
 
   const double a_min = 1e-14; /* early-time limit */
   const size_t n_pts = 10000;
@@ -94,7 +80,7 @@ int gen_gal_build_background(struct background * pba)
   if (!a_arr || !rho_smg_arr || !p_smg_arr) { status = GSL_ENOMEM; goto fail; }
 
   /* Integration set-up */
-  struct gen_gal_params P = { .Om0 = Omega_m0, .Or0 = Omega_r0, .B = B };
+  struct gen_gal_params P = { .Om0 = Omega_m0, .Or0 = Omega_r0, .A = A };
   gsl_odeiv2_system sys = { .function = rhs, .jacobian = NULL, .dimension = 1, .params = &P };
 
   gsl_odeiv2_driver *drv =
@@ -121,27 +107,12 @@ int gen_gal_build_background(struct background * pba)
     a_arr[i]    = a;
     const double E = y[0];
 
-    double dEdu_over_E;
-    {
-      double dy_temp[1];
-      rhs(u,&E,dy_temp,&P);
-      dEdu_over_E = dy_temp[0] / E;
-    }
-
     const double Om    = Omega_m0 * pow(a,-3) / (E*E);
     const double Or    = Omega_r0 * pow(a,-4) / (E*E);
 
-    const double denom = 1.5 * (Om + 4.0/3.0 * Or);
-    double fac = dEdu_over_E / denom;
-
-    const double Oext = Om + Or;
-    if (Oext > 1.0 - 1e-14) fac = 1.0;
-    if (fac < 0.0) fac = 0.0;
-    if (fac > 1.0) fac = 1.0;
-
-    double Omega_smg = (1.0 - fac) / (fac * (1.0 + B) - B);
+    double Omega_smg = (1.0 - Om - Or);
     /* Clamp true negatives: */
-    if (Oext > 1.0 - 1e-12 && Omega_smg < 0.0) Omega_smg = 0.0;
+    if (Om+Or > 1.0 - 1e-12 && Omega_smg < 0.0) Omega_smg = 0.0;
 
     /* Early-time asymptotic match: Ω_smg(a) = C4 / E(a)^4 once threshold crossed */
     if (!use_asymp && Omega_smg < Omega_smg_match_th) {
@@ -153,8 +124,8 @@ int gen_gal_build_background(struct background * pba)
 
     rho_smg_arr[i] = 3.0 * H0*H0 * E*E * Omega_smg;
 
-    const double S = 1.0 / (1.0 + (1.0 + B) * Omega_smg);
-    p_smg_arr[i] = - rho_smg_arr[i] * (1.0 + S * (Om + 4.0/3.0 * Or));
+    double fac = 1.0 / (1.0 + Omega_smg * pow(1 + A/E, 2));
+    p_smg_arr[i] = - rho_smg_arr[i] * (1 + (Om + 4.0/3.0 * Or)/Omega_smg * (1 - fac));
 
     if (i + 1 < n_pts) {
       const double u_next = u0 + (double)(i + 1) * du;

@@ -967,21 +967,13 @@ int gravity_models_get_alphas_par_smg(
   }
   else if (pba->gravity_model_smg == generalized_galileon) {
     double A = pba->parameters_2_smg[0];
-    double B = pba->parameters_smg[0];
-
-    double S = 1/(1 + Omega_smg + B*Omega_smg);
 
     double H = pvecback[pba->index_bg_H];
     double bra = 2 * Omega_smg * (1 - A/H * pba->H0);
 
     pvecback[pba->index_bg_braiding_smg] = bra;
 
-    if (Omega_smg < 1e-6) {
-      pvecback[pba->index_bg_kineticity_smg] = 6 * Omega_smg;
-    }
-    else {
-      pvecback[pba->index_bg_kineticity_smg] = 3.0 / 2.0 * bra*bra*(1/(Omega_smg * S) - 1);
-    }
+    pvecback[pba->index_bg_kineticity_smg] = 6 * Omega_smg;
     pvecback[pba->index_bg_tensor_excess_smg] = 0.0;
     pvecback[pba->index_bg_M2_running_smg] = 0.0;
     pvecback[pba->index_bg_delta_M2_smg] = 0.0; //M2-1
